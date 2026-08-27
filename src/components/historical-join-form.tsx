@@ -1,18 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
+function pad(value: number): string {
+  return String(value).padStart(2, "0");
+}
 
 export default function HistoricalJoinForm() {
   const [redditUsername, setRedditUsername] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [messagedAt, setMessagedAt] = useState("");
+  const [dateValue, setDateValue] = useState("");
+  const [timeValue, setTimeValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const dateOptions = useMemo(() => {
+    const options: string[] = [];
+    const start = new Date("2026-01-01T00:00:00");
+    const end = new Date();
+    end.setHours(0, 0, 0, 0);
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      options.push(
+        `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+      );
+    }
+    return options.reverse();
+  }, []);
+
+  const timeOptions = useMemo(() => {
+    const options: string[] = [];
+    for (let hour = 0; hour < 24; hour += 1) {
+      for (let minute = 0; minute < 60; minute += 15) {
+        options.push(`${pad(hour)}:${pad(minute)}`);
+      }
+    }
+    return options;
+  }, []);
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    if (!dateValue || !timeValue) {
+      setError("Select the exact date and time you messaged us.");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -22,7 +57,7 @@ export default function HistoricalJoinForm() {
         body: JSON.stringify({
           redditUsername,
           whatsapp,
-          messagedAt,
+          messagedAt: `${dateValue}T${timeValue}`,
           note: "",
         }),
       });
@@ -50,8 +85,8 @@ export default function HistoricalJoinForm() {
           You&apos;re on the list
         </h2>
         <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
-          We&apos;ll contact you in the order of your original message when stock
-          arrives.
+          We&apos;ll verify the date &amp; time you gave us, then contact you in
+          the order of your original message when stock arrives.
         </p>
       </div>
     );
@@ -113,24 +148,60 @@ export default function HistoricalJoinForm() {
         </div>
 
         <div>
-          <label
-            htmlFor="historical-messaged-at"
-            className="mb-1.5 block text-sm font-medium text-foreground"
-          >
+          <span className="mb-1.5 block text-sm font-medium text-foreground">
             Exact date &amp; time you messaged us
-          </label>
-          <input
-            id="historical-messaged-at"
-            name="messagedAt"
-            type="datetime-local"
-            required
-            value={messagedAt}
-            onChange={(e) => setMessagedAt(e.target.value)}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground focus:border-accent"
-          />
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            Pick the date and time you originally messaged us. This decides your
-            queue position.
+          </span>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label
+                htmlFor="historical-date"
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
+                Date
+              </label>
+              <select
+                id="historical-date"
+                name="date"
+                required
+                value={dateValue}
+                onChange={(e) => setDateValue(e.target.value)}
+                className="w-full cursor-pointer rounded-xl border border-border bg-background px-3 py-3 text-base text-foreground focus:border-accent"
+              >
+                <option value="">Select date</option>
+                {dateOptions.map((date) => (
+                  <option key={date} value={date}>
+                    {date}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="historical-time"
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
+                Time
+              </label>
+              <select
+                id="historical-time"
+                name="time"
+                required
+                value={timeValue}
+                onChange={(e) => setTimeValue(e.target.value)}
+                className="w-full cursor-pointer rounded-xl border border-border bg-background px-3 py-3 text-base text-foreground focus:border-accent"
+              >
+                <option value="">Select time</option>
+                {timeOptions.map((time) => (
+                  <option key={time} value={time}>
+                    {time}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <p className="mt-2 rounded-lg border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-xs leading-5 text-amber-200/80">
+            The exact date &amp; time you provide will be verified before your
+            queue position is confirmed.
           </p>
         </div>
 
