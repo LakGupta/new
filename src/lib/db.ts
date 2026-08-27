@@ -4,7 +4,11 @@ import postgres, { type Sql } from "postgres";
 import type { Entry, EntryStatus, EntryWithPositions } from "./types";
 import { ACTIVE_STATUSES } from "./types";
 
-const DATABASE_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const DATABASE_URL =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.STORAGE_URL ||
+  process.env.POSTGRES_URL_NON_POOLING;
 const isPostgres = Boolean(DATABASE_URL);
 
 let sql: Sql<Record<string, never>> | null = null;
@@ -66,7 +70,16 @@ function mapRow(row: EntryRow): Entry {
 const DATA_DIR = path.join(process.cwd(), ".data");
 const DATA_FILE = path.join(DATA_DIR, "queue.json");
 
+function ensureLocalJsonAllowed(): void {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Database is not configured. Set the DATABASE_URL environment variable.",
+    );
+  }
+}
+
 async function readJsonEntries(): Promise<Entry[]> {
+  ensureLocalJsonAllowed();
   try {
     const raw = await fs.readFile(DATA_FILE, "utf8");
     const parsed = JSON.parse(raw);
@@ -77,6 +90,7 @@ async function readJsonEntries(): Promise<Entry[]> {
 }
 
 async function writeJsonEntries(entries: Entry[]): Promise<void> {
+  ensureLocalJsonAllowed();
   await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.writeFile(DATA_FILE, JSON.stringify(entries, null, 2), "utf8");
 }

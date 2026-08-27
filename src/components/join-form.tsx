@@ -12,7 +12,7 @@ export default function JoinForm({ queueName = "Amazfit Helios Strap" }: JoinFor
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [position, setPosition] = useState<number | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,7 +35,7 @@ export default function JoinForm({ queueName = "Amazfit Helios Strap" }: JoinFor
         throw new Error(data.error || "Something went wrong. Please try again.");
       }
 
-      setPosition(data.position as number);
+      setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -43,16 +43,13 @@ export default function JoinForm({ queueName = "Amazfit Helios Strap" }: JoinFor
     }
   }
 
-  if (position !== null) {
+  if (submitted) {
     return (
       <div className="animate-pop-in rounded-2xl border border-border bg-card p-8 text-center shadow-[0_0_60px_rgba(59,130,246,0.10)]">
         <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">
           You&apos;re in the queue
         </p>
-        <p className="mt-6 font-mono text-7xl font-bold text-accent">
-          #{position}
-        </p>
-        <h2 className="mt-4 text-2xl font-semibold text-foreground">
+        <h2 className="mt-5 text-2xl font-semibold text-foreground">
           See you at the next drop
         </h2>
         <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
