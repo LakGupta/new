@@ -146,6 +146,17 @@ export default function JoinForm({ queueName = "Amazfit Helios Strap" }: JoinFor
           </div>
         ) : null}
 
+        {submitting ? (
+          <div
+            role="progressbar"
+            aria-label="Joining the queue"
+            aria-valuetext="Processing"
+            className="h-1.5 w-full overflow-hidden rounded-full bg-accent/20"
+          >
+            <div className="loading-bar-indeterminate h-full w-1/3 rounded-full bg-accent" />
+          </div>
+        ) : null}
+
         <button
           type="submit"
           disabled={submitting}

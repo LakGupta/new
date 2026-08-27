@@ -4,7 +4,9 @@ import ProductDetails from "@/components/product-details";
 import QueueExplainer from "@/components/queue-explainer";
 
 export default function Home() {
-  const whatsappGroupUrl = process.env.WHATSAPP_GROUP_URL;
+  const whatsappGroupUrl =
+    process.env.WHATSAPP_GROUP_URL ||
+    "https://chat.whatsapp.com/E5IELB5rwiJINLg34d01GR";
 
   return (
     <main className="relative flex-1 overflow-hidden px-4 py-10 sm:py-16">
