@@ -49,19 +49,23 @@ function ensureTable(): Promise<void> {
 
 function ensureHistoricalTable(): Promise<void> {
   if (!ensureHistoricalPromise) {
-    ensureHistoricalPromise = getSql()`
-      CREATE TABLE IF NOT EXISTS historical_entries (
-        id SERIAL PRIMARY KEY,
-        reddit_username TEXT NOT NULL,
-        whatsapp TEXT NOT NULL,
-        messaged_at TIMESTAMPTZ NOT NULL,
-        note TEXT,
-        status TEXT NOT NULL DEFAULT 'waiting',
-        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-      );
-      CREATE INDEX IF NOT EXISTS idx_historical_entries_messaged_at
-        ON historical_entries (messaged_at ASC);
-    `.then(() => undefined);
+    ensureHistoricalPromise = (async () => {
+      await getSql()`
+        CREATE TABLE IF NOT EXISTS historical_entries (
+          id SERIAL PRIMARY KEY,
+          reddit_username TEXT NOT NULL,
+          whatsapp TEXT NOT NULL,
+          messaged_at TIMESTAMPTZ NOT NULL,
+          note TEXT,
+          status TEXT NOT NULL DEFAULT 'waiting',
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `;
+      await getSql()`
+        CREATE INDEX IF NOT EXISTS idx_historical_entries_messaged_at
+          ON historical_entries (messaged_at ASC)
+      `;
+    })();
   }
   return ensureHistoricalPromise;
 }
