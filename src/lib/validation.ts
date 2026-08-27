@@ -10,6 +10,11 @@ export function normalizeWhatsApp(value: string): string {
   return value.replace(/[^\d]/g, "");
 }
 
+export function normalizeRedditUsername(value: string): string {
+  // Accept "u/name" or "/u/name" and store just "name".
+  return value.trim().replace(/^\/?u\//i, "").trim();
+}
+
 export function validateEntryInput(input: unknown): EntryInput {
   if (!input || typeof input !== "object") {
     throw new Error("Invalid submission.");
@@ -17,8 +22,9 @@ export function validateEntryInput(input: unknown): EntryInput {
 
   const raw = input as Record<string, unknown>;
 
-  const redditUsername =
-    typeof raw.redditUsername === "string" ? raw.redditUsername.trim() : "";
+  const redditUsername = normalizeRedditUsername(
+    typeof raw.redditUsername === "string" ? raw.redditUsername : "",
+  );
   const whatsapp = typeof raw.whatsapp === "string" ? raw.whatsapp.trim() : "";
   const note = typeof raw.note === "string" ? raw.note.trim() : "";
 
@@ -63,8 +69,9 @@ export function validatePartialEntryInput(
   const patch: Partial<EntryInput> = {};
 
   if (raw.redditUsername !== undefined) {
-    const value =
-      typeof raw.redditUsername === "string" ? raw.redditUsername.trim() : "";
+    const value = normalizeRedditUsername(
+      typeof raw.redditUsername === "string" ? raw.redditUsername : "",
+    );
     if (!value || value.length > 50 || !/^[a-zA-Z0-9_-]+$/.test(value)) {
       throw new Error(
         "Reddit username can only contain letters, numbers, underscores and hyphens (max 50 characters).",

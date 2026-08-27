@@ -92,7 +92,7 @@ export default function JoinForm({ queueName = "Amazfit Helios Strap" }: JoinFor
             className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
           />
           <p className="mt-1.5 text-xs text-muted-foreground">
-            The username you&apos;ll contact us from.
+            u/ is optional. Just your username is fine.
           </p>
         </div>
 
