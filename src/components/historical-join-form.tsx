@@ -9,25 +9,45 @@ function pad(value: number): string {
 export default function HistoricalJoinForm() {
   const [redditUsername, setRedditUsername] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [dateValue, setDateValue] = useState("");
+  const [monthValue, setMonthValue] = useState("");
+  const [dayValue, setDayValue] = useState("");
   const [timeValue, setTimeValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const dateOptions = useMemo(() => {
-    const options: string[] = [];
-    const start = new Date("2026-01-01T00:00:00");
-    const end = new Date();
-    end.setHours(0, 0, 0, 0);
+  const monthOptions = useMemo(() => {
+    const options: { value: string; label: string }[] = [];
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
 
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      options.push(
-        `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
-      );
+    for (let month = 1; month <= 12; month += 1) {
+      const value = `2026-${pad(month)}`;
+      if (value > currentMonth) break;
+      const label = new Date(2026, month - 1, 1).toLocaleString(undefined, {
+        month: "long",
+        year: "numeric",
+      });
+      options.push({ value, label });
     }
-    return options.reverse();
+    return options;
   }, []);
+
+  const dayOptions = useMemo(() => {
+    if (!monthValue) return [];
+    const [year, month] = monthValue.split("-").map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const now = new Date();
+    const isCurrentMonth =
+      now.getFullYear() === year && now.getMonth() + 1 === month;
+    const maxDay = isCurrentMonth ? now.getDate() : daysInMonth;
+
+    const days: string[] = [];
+    for (let day = 1; day <= maxDay; day += 1) {
+      days.push(pad(day));
+    }
+    return days;
+  }, [monthValue]);
 
   const timeOptions = useMemo(() => {
     const options: string[] = [];
@@ -43,7 +63,7 @@ export default function HistoricalJoinForm() {
     event.preventDefault();
     setError(null);
 
-    if (!dateValue || !timeValue) {
+    if (!monthValue || !dayValue || !timeValue) {
       setError("Select the exact date and time you messaged us.");
       return;
     }
@@ -57,7 +77,7 @@ export default function HistoricalJoinForm() {
         body: JSON.stringify({
           redditUsername,
           whatsapp,
-          messagedAt: `${dateValue}T${timeValue}`,
+          messagedAt: `${monthValue}-${dayValue}T${timeValue}`,
           note: "",
         }),
       });
@@ -151,31 +171,58 @@ export default function HistoricalJoinForm() {
           <span className="mb-1.5 block text-sm font-medium text-foreground">
             Exact date &amp; time you messaged us
           </span>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div>
               <label
-                htmlFor="historical-date"
+                htmlFor="historical-month"
                 className="mb-1 block text-xs font-medium text-muted-foreground"
               >
-                Date
+                Month
               </label>
               <select
-                id="historical-date"
-                name="date"
+                id="historical-month"
+                name="month"
                 required
-                value={dateValue}
-                onChange={(e) => setDateValue(e.target.value)}
+                value={monthValue}
+                onChange={(e) => {
+                  setMonthValue(e.target.value);
+                  setDayValue("");
+                }}
                 className="w-full cursor-pointer rounded-xl border border-border bg-background px-3 py-3 text-base text-foreground focus:border-accent"
               >
-                <option value="">Select date</option>
-                {dateOptions.map((date) => (
-                  <option key={date} value={date}>
-                    {date}
+                <option value="">Select month</option>
+                {monthOptions.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
                   </option>
                 ))}
               </select>
             </div>
             <div>
+              <label
+                htmlFor="historical-day"
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
+                Date
+              </label>
+              <select
+                id="historical-day"
+                name="day"
+                required
+                value={dayValue}
+                onChange={(e) => setDayValue(e.target.value)}
+                disabled={!monthValue}
+                className="w-full cursor-pointer rounded-xl border border-border bg-background px-3 py-3 text-base text-foreground focus:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Select day</option>
+                {dayOptions.map((day) => (
+                  <option key={day} value={day}>
+                    {day}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-span-2 sm:col-span-1">
               <label
                 htmlFor="historical-time"
                 className="mb-1 block text-xs font-medium text-muted-foreground"
