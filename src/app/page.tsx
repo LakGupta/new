@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import JoinForm from "@/components/join-form";
 import ProductDetails from "@/components/product-details";
 import QueueExplainer from "@/components/queue-explainer";
@@ -173,6 +174,13 @@ export default function Home() {
         <p className="mt-8 text-center font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground/70">
           First come, first served · queue order = who joined first
         </p>
+
+        <Link
+          href="/historical"
+          className="mt-4 flex items-center justify-center gap-1.5 text-center text-sm text-muted-foreground transition hover:text-accent"
+        >
+          Messaged us before this site? Join the historical queue →
+        </Link>
       </div>
     </main>
   );

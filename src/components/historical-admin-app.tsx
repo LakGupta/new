@@ -4,52 +4,37 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ACTIVE_STATUSES,
   STATUSES,
-  STATUS_COLORS,
   STATUS_LABELS,
   type EntryStatus,
-  type EntryWithPositions,
+  type HistoricalEntryWithPositions,
 } from "@/lib/types";
-import { whatsAppLink } from "@/lib/validation";
+import { QueueCard, StatCard } from "./admin-app";
 
 type AuthState = "checking" | "logged-out" | "logged-in";
 type Filter = EntryStatus | "all";
 
-type EditForm = {
-  redditUsername: string;
-  whatsapp: string;
-  note: string;
-  messagedAt?: string;
+const EMPTY_FORM = {
+  redditUsername: "",
+  whatsapp: "",
+  messagedAt: "",
+  note: "",
 };
 
-const EMPTY_FORM = { redditUsername: "", whatsapp: "", note: "" };
-
-function formatDate(value: string): string {
-  try {
-    return new Date(value).toLocaleString(undefined, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
-  } catch {
-    return value;
-  }
+function toDatetimeLocal(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate(),
+  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function StatusPill({ status }: { status: EntryStatus }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${STATUS_COLORS[status]}`}
-    >
-      {STATUS_LABELS[status]}
-    </span>
-  );
-}
-
-export default function AdminApp() {
+export default function HistoricalAdminApp() {
   const [authState, setAuthState] = useState<AuthState>("checking");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  const [entries, setEntries] = useState<EntryWithPositions[]>([]);
+  const [entries, setEntries] = useState<HistoricalEntryWithPositions[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,18 +54,20 @@ export default function AdminApp() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/entries");
+      const response = await fetch("/api/historical");
       if (response.status === 401) {
         setAuthState("logged-out");
         return;
       }
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Failed to load the queue.");
+        throw new Error(data.error || "Failed to load the historical queue.");
       }
-      setEntries(data.entries as EntryWithPositions[]);
+      setEntries(data.entries as HistoricalEntryWithPositions[]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load the queue.");
+      setError(
+        err instanceof Error ? err.message : "Failed to load the historical queue.",
+      );
     } finally {
       setLoading(false);
     }
@@ -137,7 +124,7 @@ export default function AdminApp() {
     setAddError(null);
     setAddBusy(true);
     try {
-      const response = await fetch("/api/entries", {
+      const response = await fetch("/api/historical", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(addForm),
@@ -156,15 +143,11 @@ export default function AdminApp() {
     }
   }
 
-  async function updateEntry(
-    id: number,
-    patch: Record<string, unknown>,
-    nextEditingId: number | null = null,
-  ) {
+  async function updateEntry(id: number, patch: Record<string, unknown>) {
     setBusyId(id);
     setError(null);
     try {
-      const response = await fetch(`/api/entries/${id}`, {
+      const response = await fetch(`/api/historical/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
@@ -172,9 +155,6 @@ export default function AdminApp() {
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Failed to update entry.");
-      }
-      if (nextEditingId !== null) {
-        setEditingId(nextEditingId);
       }
       await loadEntries();
     } catch (err) {
@@ -185,11 +165,11 @@ export default function AdminApp() {
   }
 
   async function handleDelete(id: number) {
-    if (!window.confirm("Delete this person from the queue?")) return;
+    if (!window.confirm("Delete this person from the historical queue?")) return;
     setBusyId(id);
     setError(null);
     try {
-      const response = await fetch(`/api/entries/${id}`, { method: "DELETE" });
+      const response = await fetch(`/api/historical/${id}`, { method: "DELETE" });
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || "Failed to delete entry.");
@@ -202,12 +182,13 @@ export default function AdminApp() {
     }
   }
 
-  function startEdit(entry: EntryWithPositions) {
+  function startEdit(entry: HistoricalEntryWithPositions) {
     setEditingId(entry.id);
     setEditError(null);
     setEditForm({
       redditUsername: entry.redditUsername,
       whatsapp: entry.whatsapp,
+      messagedAt: toDatetimeLocal(entry.messagedAt),
       note: entry.note ?? "",
     });
   }
@@ -218,7 +199,7 @@ export default function AdminApp() {
     setEditError(null);
     setBusyId(editingId);
     try {
-      const response = await fetch(`/api/entries/${editingId}`, {
+      const response = await fetch(`/api/historical/${editingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editForm),
@@ -281,10 +262,10 @@ export default function AdminApp() {
               Admin
             </p>
             <h1 className="mt-3 text-3xl font-bold tracking-tight">
-              Helios Queue
+              Historical Queue
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Enter the admin password to manage the waitlist.
+              Enter the admin password to manage the historical queue.
             </p>
           </div>
 
@@ -293,13 +274,13 @@ export default function AdminApp() {
             className="rounded-2xl border border-border bg-card p-5"
           >
             <label
-              htmlFor="admin-password"
+              htmlFor="admin-password-historical"
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
               Password
             </label>
             <input
-              id="admin-password"
+              id="admin-password-historical"
               type="password"
               autoComplete="current-password"
               required
@@ -332,17 +313,24 @@ export default function AdminApp() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-10">
-      {/* Header */}
+      <a
+        href="/admin"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-accent"
+      >
+        ← Back to main admin
+      </a>
+
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.35em] text-accent">
             Admin
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">
-            Helios Queue
+            Historical Queue
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {entries.length} total · {stats.active} active
+            {entries.length} total · {stats.active} active · sorted by messaged
+            date
           </p>
         </div>
         <button
@@ -353,13 +341,6 @@ export default function AdminApp() {
         </button>
       </header>
 
-      <a
-        href="/admin/historical"
-        className="mb-6 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm text-muted-foreground transition hover:text-accent"
-      >
-        Manage historical queue →
-      </a>
-
       {error ? (
         <div
           role="alert"
@@ -369,7 +350,6 @@ export default function AdminApp() {
         </div>
       ) : null}
 
-      {/* Stats */}
       <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <StatCard label="Active" value={stats.active} highlight />
         <StatCard label="Waiting" value={stats.waiting} />
@@ -378,7 +358,6 @@ export default function AdminApp() {
         <StatCard label="No reply / skipped" value={stats.unresolved} />
       </section>
 
-      {/* Toolbar */}
       <section className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <svg
@@ -426,7 +405,6 @@ export default function AdminApp() {
         </button>
       </section>
 
-      {/* Filter chips */}
       <section className="mb-5 flex gap-2 overflow-x-auto pb-1">
         {(["all", ...STATUSES] as Filter[]).map((value) => {
           const label = value === "all" ? "All" : STATUS_LABELS[value];
@@ -451,23 +429,24 @@ export default function AdminApp() {
         })}
       </section>
 
-      {/* Add manually */}
       {showAdd ? (
         <form
           onSubmit={handleCreateEntry}
           className="mb-5 rounded-2xl border border-border bg-card p-5"
         >
-          <h2 className="mb-4 text-lg font-semibold">Add someone manually</h2>
+          <h2 className="mb-4 text-lg font-semibold">
+            Add someone manually (historical)
+          </h2>
           <div className="space-y-4">
             <div>
               <label
-                htmlFor="add-reddit"
+                htmlFor="add-historical-reddit"
                 className="mb-1.5 block text-sm font-medium text-foreground"
               >
                 Reddit username
               </label>
               <input
-                id="add-reddit"
+                id="add-historical-reddit"
                 type="text"
                 required
                 value={addForm.redditUsername}
@@ -479,13 +458,13 @@ export default function AdminApp() {
             </div>
             <div>
               <label
-                htmlFor="add-whatsapp"
+                htmlFor="add-historical-whatsapp"
                 className="mb-1.5 block text-sm font-medium text-foreground"
               >
                 WhatsApp number
               </label>
               <input
-                id="add-whatsapp"
+                id="add-historical-whatsapp"
                 type="tel"
                 required
                 value={addForm.whatsapp}
@@ -498,13 +477,31 @@ export default function AdminApp() {
             </div>
             <div>
               <label
-                htmlFor="add-note"
+                htmlFor="add-historical-messaged-at"
+                className="mb-1.5 block text-sm font-medium text-foreground"
+              >
+                Exact date &amp; time they messaged
+              </label>
+              <input
+                id="add-historical-messaged-at"
+                type="datetime-local"
+                required
+                value={addForm.messagedAt}
+                onChange={(e) =>
+                  setAddForm({ ...addForm, messagedAt: e.target.value })
+                }
+                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="add-historical-note"
                 className="mb-1.5 block text-sm font-medium text-foreground"
               >
                 Note <span className="text-muted-foreground">(optional)</span>
               </label>
               <textarea
-                id="add-note"
+                id="add-historical-note"
                 rows={2}
                 value={addForm.note}
                 onChange={(e) =>
@@ -529,7 +526,7 @@ export default function AdminApp() {
                 disabled={addBusy}
                 className="flex-1 cursor-pointer rounded-xl bg-accent py-2.5 text-sm font-semibold text-accent-foreground transition hover:bg-blue-400 disabled:opacity-60"
               >
-                {addBusy ? "Adding…" : "Add to queue"}
+                {addBusy ? "Adding…" : "Add to historical queue"}
               </button>
               <button
                 type="button"
@@ -543,7 +540,6 @@ export default function AdminApp() {
         </form>
       ) : null}
 
-      {/* Queue list */}
       <section className="space-y-3">
         {loading ? (
           <p className="py-10 text-center font-mono text-sm uppercase tracking-[0.3em] text-muted-foreground">
@@ -553,7 +549,7 @@ export default function AdminApp() {
           <div className="rounded-2xl border border-dashed border-border py-14 text-center">
             <p className="text-sm text-muted-foreground">
               {entries.length === 0
-                ? "No one has joined the queue yet."
+                ? "No one has joined the historical queue yet."
                 : "No entries match this filter."}
             </p>
           </div>
@@ -566,7 +562,14 @@ export default function AdminApp() {
               editing={editingId === entry.id}
               editForm={editForm}
               editError={editError}
-              onEditFormChange={setEditForm}
+              onEditFormChange={(form) =>
+                setEditForm({
+                  redditUsername: form.redditUsername,
+                  whatsapp: form.whatsapp,
+                  note: form.note,
+                  messagedAt: form.messagedAt ?? "",
+                })
+              }
               onEditSubmit={handleEditSubmit}
               onCancelEdit={() => setEditingId(null)}
               onStartEdit={() => startEdit(entry)}
@@ -574,6 +577,13 @@ export default function AdminApp() {
               onSkip={() => updateEntry(entry.id, { status: "skipped" })}
               onRestore={() => updateEntry(entry.id, { status: "waiting" })}
               onDelete={() => handleDelete(entry.id)}
+              timeLabel="Messaged"
+              timeValue={entry.messagedAt}
+              showMessagedAt
+              messagedAtValue={editForm.messagedAt}
+              onMessagedAtChange={(value) =>
+                setEditForm({ ...editForm, messagedAt: value })
+              }
             />
           ))
         )}
@@ -581,344 +591,3 @@ export default function AdminApp() {
     </main>
   );
 }
-
-function StatCard({
-  label,
-  value,
-  highlight = false,
-}: {
-  label: string;
-  value: number;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-xl border p-3 ${
-        highlight
-          ? "border-accent/40 bg-accent/10"
-          : "border-border bg-card"
-      }`}
-    >
-      <p className="font-mono text-2xl font-bold">{value}</p>
-      <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
-    </div>
-  );
-}
-
-export { StatCard };
-
-function QueueCard({
-  entry,
-  busy,
-  editing,
-  editForm,
-  editError,
-  onEditFormChange,
-  onEditSubmit,
-  onCancelEdit,
-  onStartEdit,
-  onStatusChange,
-  onSkip,
-  onRestore,
-  onDelete,
-  timeLabel = "Joined",
-  timeValue,
-  showMessagedAt = false,
-  messagedAtValue,
-  onMessagedAtChange,
-}: {
-  entry: EntryWithPositions;
-  busy: boolean;
-  editing: boolean;
-  editForm: EditForm;
-  editError: string | null;
-  onEditFormChange: (form: EditForm) => void;
-  onEditSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-  onCancelEdit: () => void;
-  onStartEdit: () => void;
-  onStatusChange: (status: EntryStatus) => void;
-  onSkip: () => void;
-  onRestore: () => void;
-  onDelete: () => void;
-  timeLabel?: string;
-  timeValue?: string;
-  showMessagedAt?: boolean;
-  messagedAtValue?: string;
-  onMessagedAtChange?: (value: string) => void;
-}) {
-  const isActive = ACTIVE_STATUSES.includes(entry.status);
-  const waLink = whatsAppLink(
-    entry.whatsapp,
-    `Hi u/${entry.redditUsername}, your Amazfit Helios strap is ready!`,
-  );
-
-  return (
-    <article
-      className={`rounded-2xl border bg-card p-4 ${
-        isActive ? "border-border" : "border-border/60 opacity-80"
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        <div
-          className={`flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl border ${
-            isActive
-              ? "border-accent/50 bg-accent/15 text-accent"
-              : "border-border bg-muted text-muted-foreground"
-          }`}
-        >
-          <span className="font-mono text-lg font-bold leading-none">
-            {entry.activePosition ?? entry.position}
-          </span>
-          <span className="mt-0.5 text-[9px] uppercase tracking-wider opacity-80">
-            {isActive ? "active" : "orig"}
-          </span>
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate font-semibold">u/{entry.redditUsername}</h3>
-            <StatusPill status={entry.status} />
-          </div>
-          <p className="mt-0.5 font-mono text-sm text-muted-foreground">
-            +{entry.whatsapp}
-          </p>
-          {entry.note ? (
-            <p className="mt-1 text-sm leading-5 text-foreground/80">
-              {entry.note}
-            </p>
-          ) : null}
-          <p className="mt-1 text-xs text-muted-foreground/80">
-            {timeLabel} {formatDate(timeValue ?? entry.createdAt)}
-            {entry.activePosition !== entry.position ? (
-              <span className="ml-2">· original #{entry.position}</span>
-            ) : null}
-          </p>
-        </div>
-      </div>
-
-      {editing ? (
-        <form onSubmit={onEditSubmit} className="mt-4 space-y-3 border-t border-border pt-4">
-          <div>
-            <label
-              htmlFor={`edit-reddit-${entry.id}`}
-              className="mb-1 block text-xs font-medium text-muted-foreground"
-            >
-              Reddit username
-            </label>
-            <input
-              id={`edit-reddit-${entry.id}`}
-              type="text"
-              required
-              value={editForm.redditUsername}
-              onChange={(e) =>
-                onEditFormChange({ ...editForm, redditUsername: e.target.value })
-              }
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:border-accent"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor={`edit-whatsapp-${entry.id}`}
-              className="mb-1 block text-xs font-medium text-muted-foreground"
-            >
-              WhatsApp number
-            </label>
-            <input
-              id={`edit-whatsapp-${entry.id}`}
-              type="tel"
-              required
-              value={editForm.whatsapp}
-              onChange={(e) =>
-                onEditFormChange({ ...editForm, whatsapp: e.target.value })
-              }
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:border-accent"
-            />
-          </div>
-          {showMessagedAt ? (
-            <div>
-              <label
-                htmlFor={`edit-messaged-at-${entry.id}`}
-                className="mb-1 block text-xs font-medium text-muted-foreground"
-              >
-                Messaged at (date &amp; time)
-              </label>
-              <input
-                id={`edit-messaged-at-${entry.id}`}
-                type="datetime-local"
-                required
-                value={messagedAtValue ?? ""}
-                onChange={(e) => onMessagedAtChange?.(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:border-accent"
-              />
-            </div>
-          ) : null}
-
-          <div>
-            <label
-              htmlFor={`edit-note-${entry.id}`}
-              className="mb-1 block text-xs font-medium text-muted-foreground"
-            >
-              Note
-            </label>
-            <textarea
-              id={`edit-note-${entry.id}`}
-              rows={2}
-              value={editForm.note}
-              onChange={(e) =>
-                onEditFormChange({ ...editForm, note: e.target.value })
-              }
-              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:border-accent"
-            />
-          </div>
-
-          {editError ? (
-            <div
-              role="alert"
-              className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
-              {editError}
-            </div>
-          ) : null}
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="submit"
-              disabled={busy}
-              className="cursor-pointer rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:bg-blue-400 disabled:opacity-60"
-            >
-              Save
-            </button>
-            <button
-              type="button"
-              onClick={onCancelEdit}
-              className="cursor-pointer rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground transition hover:text-foreground"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      ) : (
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-3">
-          <a
-            href={waLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-2 text-sm font-medium text-emerald-300 ring-1 ring-emerald-400/30 transition hover:bg-emerald-500/25"
-          >
-            <MessageIcon />
-            WhatsApp
-          </a>
-
-          <label className="sr-only" htmlFor={`status-${entry.id}`}>
-            Change status
-          </label>
-          <select
-            id={`status-${entry.id}`}
-            value={entry.status}
-            onChange={(e) => onStatusChange(e.target.value as EntryStatus)}
-            disabled={busy}
-            className="cursor-pointer rounded-lg border border-border bg-background px-2.5 py-2 text-sm text-foreground focus:border-accent disabled:opacity-60"
-          >
-            {STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {STATUS_LABELS[status]}
-              </option>
-            ))}
-          </select>
-
-          {isActive ? (
-            <button
-              onClick={onSkip}
-              disabled={busy}
-              className="cursor-pointer rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition hover:border-amber-400/40 hover:text-amber-300 disabled:opacity-60"
-            >
-              Skip
-            </button>
-          ) : (
-            <button
-              onClick={onRestore}
-              disabled={busy}
-              className="cursor-pointer rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground disabled:opacity-60"
-            >
-              Restore
-            </button>
-          )}
-
-          <button
-            onClick={onStartEdit}
-            disabled={busy}
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground disabled:opacity-60"
-          >
-            <EditIcon />
-            Edit
-          </button>
-
-          <button
-            onClick={onDelete}
-            disabled={busy}
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition hover:border-destructive/40 hover:text-destructive disabled:opacity-60"
-          >
-            <TrashIcon />
-            Delete
-          </button>
-        </div>
-      )}
-    </article>
-  );
-}
-
-function MessageIcon() {
-  return (
-    <svg
-      className="h-4 w-4"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-    </svg>
-  );
-}
-
-function EditIcon() {
-  return (
-    <svg
-      className="h-3.5 w-3.5"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-      <path d="m15 5 4 4" />
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg
-      className="h-3.5 w-3.5"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M3 6h18" />
-      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-    </svg>
-  );
-}
-
-export { QueueCard };

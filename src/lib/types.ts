@@ -24,6 +24,18 @@ export interface EntryWithPositions extends Entry {
   activePosition: number | null;
 }
 
+export interface HistoricalEntry extends Entry {
+  /** The date/time the buyer says they messaged you. */
+  messagedAt: string;
+}
+
+export interface HistoricalEntryWithPositions extends HistoricalEntry {
+  /** 1-based position in the full historical queue (sorted by messagedAt). */
+  position: number;
+  /** 1-based position among people still waiting to be served, or null for sold/skipped. */
+  activePosition: number | null;
+}
+
 export const ACTIVE_STATUSES: EntryStatus[] = ["waiting", "contacted"];
 
 export const STATUS_LABELS: Record<EntryStatus, string> = {
