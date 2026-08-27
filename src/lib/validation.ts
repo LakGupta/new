@@ -10,6 +10,27 @@ export function normalizeWhatsApp(value: string): string {
   return value.replace(/[^\d]/g, "");
 }
 
+export function normalizeWhatsAppWithCountry(value: string): string {
+  let digits = normalizeWhatsApp(value);
+
+  // Remove a leading Indian trunk prefix (0).
+  if (digits.startsWith("0")) {
+    digits = digits.slice(1);
+  }
+
+  // Already has India's +91 country code.
+  if (digits.startsWith("91") && digits.length === 12) {
+    return digits;
+  }
+
+  // A plain 10-digit Indian mobile number -> add +91 automatically.
+  if (digits.length === 10) {
+    return `91${digits}`;
+  }
+
+  return digits;
+}
+
 export function normalizeRedditUsername(value: string): string {
   // Accept "u/name" or "/u/name" and store just "name".
   return value.trim().replace(/^\/?u\//i, "").trim();
@@ -37,14 +58,12 @@ export function validateEntryInput(input: unknown): EntryInput {
     );
   }
 
-  const digits = normalizeWhatsApp(whatsapp);
+  const digits = normalizeWhatsAppWithCountry(whatsapp);
   if (!whatsapp) {
     throw new Error("WhatsApp number is required.");
   }
-  if (digits.length < 7 || digits.length > 15) {
-    throw new Error(
-      "WhatsApp number should be 7–15 digits (country code included).",
-    );
+  if (digits.length < 10 || digits.length > 15) {
+    throw new Error("Enter a valid WhatsApp number.");
   }
 
   if (note.length > 500) {
@@ -82,11 +101,9 @@ export function validatePartialEntryInput(
 
   if (raw.whatsapp !== undefined) {
     const value = typeof raw.whatsapp === "string" ? raw.whatsapp.trim() : "";
-    const digits = normalizeWhatsApp(value);
-    if (!value || digits.length < 7 || digits.length > 15) {
-      throw new Error(
-        "WhatsApp number should be 7–15 digits (country code included).",
-      );
+    const digits = normalizeWhatsAppWithCountry(value);
+    if (!value || digits.length < 10 || digits.length > 15) {
+      throw new Error("Enter a valid WhatsApp number.");
     }
     patch.whatsapp = digits;
   }

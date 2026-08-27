@@ -478,7 +478,7 @@ export default function AdminApp() {
                 onChange={(e) =>
                   setAddForm({ ...addForm, whatsapp: e.target.value })
                 }
-                placeholder="+91 98765 43210"
+                placeholder="98765 43210"
                 className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
               />
             </div>

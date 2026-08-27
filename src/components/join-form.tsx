@@ -110,12 +110,9 @@ export default function JoinForm({ queueName = "Amazfit Helios Strap" }: JoinFor
             maxLength={20}
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
-            placeholder="+91 98765 43210"
+            placeholder="98765 43210"
             className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
           />
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            Include your country code so we can message you.
-          </p>
         </div>
 
         <div>
