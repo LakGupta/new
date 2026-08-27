@@ -58,7 +58,9 @@ function ensureHistoricalTable(): Promise<void> {
         note TEXT,
         status TEXT NOT NULL DEFAULT 'waiting',
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-      )
+      );
+      CREATE INDEX IF NOT EXISTS idx_historical_entries_messaged_at
+        ON historical_entries (messaged_at ASC);
     `.then(() => undefined);
   }
   return ensureHistoricalPromise;
