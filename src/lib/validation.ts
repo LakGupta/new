@@ -128,6 +128,11 @@ export function whatsAppLink(number: string, text?: string): string {
   return text ? `${base}?text=${encodeURIComponent(text)}` : base;
 }
 
+export function redditProfileLink(username: string): string {
+  const clean = normalizeRedditUsername(username);
+  return `https://www.reddit.com/user/${encodeURIComponent(clean)}/`;
+}
+
 export interface HistoricalEntryInput {
   redditUsername: string;
   whatsapp: string;
