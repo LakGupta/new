@@ -54,7 +54,8 @@ export default function JoinForm({ queueName = "Amazfit Helios Strap" }: JoinFor
         </h2>
         <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
           We&apos;ll message you on WhatsApp in queue order when the {queueName}{" "}
-          straps arrive.
+          straps arrive. You can check your current position anytime using the
+          Check position tab above.
         </p>
       </div>
     );

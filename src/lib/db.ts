@@ -2,11 +2,14 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import postgres, { type Sql } from "postgres";
 import type {
+  CombinedEntry,
+  CombinedEntryWithPositions,
   Entry,
   EntryStatus,
   EntryWithPositions,
   HistoricalEntry,
   HistoricalEntryWithPositions,
+  QueueSource,
 } from "./types";
 import { ACTIVE_STATUSES } from "./types";
 
@@ -459,4 +462,98 @@ export async function deleteHistoricalEntry(id: number): Promise<boolean> {
   if (filtered.length === entries.length) return false;
   await writeJsonHistoricalEntries(filtered);
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Consolidated queue (historical + regular shown as one queue)
+// ---------------------------------------------------------------------------
+
+function combinedSortValue(entry: CombinedEntry): string {
+  return entry.source === "historical"
+    ? entry.messagedAt ?? entry.createdAt
+    : entry.createdAt;
+}
+
+function rankCombinedEntries(
+  entries: CombinedEntry[],
+): CombinedEntryWithPositions[] {
+  const sorted = [...entries].sort((a, b) => {
+    const timeOrder = combinedSortValue(a).localeCompare(combinedSortValue(b));
+    if (timeOrder !== 0) return timeOrder;
+
+    // Same timestamp: keep regular entries before historical for stability.
+    const sourceOrder = a.source.localeCompare(b.source);
+    if (sourceOrder !== 0) return sourceOrder;
+
+    const createdOrder = a.createdAt.localeCompare(b.createdAt);
+    if (createdOrder !== 0) return createdOrder;
+
+    return a.id - b.id;
+  });
+
+  let activeCount = 0;
+  return sorted.map((entry, index) => {
+    const isActive = ACTIVE_STATUSES.includes(entry.status);
+    if (isActive) activeCount += 1;
+    return {
+      ...entry,
+      position: index + 1,
+      activePosition: isActive ? activeCount : null,
+    };
+  });
+}
+
+function asCombinedEntry(
+  entry: EntryWithPositions | HistoricalEntryWithPositions,
+  source: QueueSource,
+): CombinedEntry {
+  return {
+    id: entry.id,
+    source,
+    redditUsername: entry.redditUsername,
+    whatsapp: entry.whatsapp,
+    note: entry.note,
+    status: entry.status,
+    createdAt: entry.createdAt,
+    messagedAt:
+      source === "historical" && "messagedAt" in entry
+        ? (entry as HistoricalEntryWithPositions).messagedAt
+        : null,
+  };
+}
+
+/**
+ * Returns everyone from the regular queue and the historical queue ranked as
+ * one single first-come, first-served queue. Historical people are ordered by
+ * the date they messaged; regular people by the date they joined the webapp.
+ */
+export async function listCombinedEntries(): Promise<CombinedEntryWithPositions[]> {
+  const [regularEntries, historicalEntries] = await Promise.all([
+    listEntries(),
+    listHistoricalEntries(),
+  ]);
+
+  return rankCombinedEntries([
+    ...regularEntries.map((entry) => asCombinedEntry(entry, "regular")),
+    ...historicalEntries.map((entry) => asCombinedEntry(entry, "historical")),
+  ]);
+}
+
+/**
+ * Finds everyone whose stored WhatsApp number matches the given
+ * already-normalised number. Matching is forgiving: people can type just the
+ * 10-digit mobile number (no +91 / country code needed) and still match
+ * entries stored with a country prefix.
+ */
+export async function findCombinedEntriesByWhatsApp(
+  whatsapp: string,
+): Promise<CombinedEntryWithPositions[]> {
+  const entries = await listCombinedEntries();
+  const last10 = whatsapp.length > 10 ? whatsapp.slice(-10) : whatsapp;
+
+  return entries.filter((entry) => {
+    const storedLast10 =
+      entry.whatsapp.length > 10 ? entry.whatsapp.slice(-10) : entry.whatsapp;
+    return entry.whatsapp === whatsapp || storedLast10 === last10;
+  });
 }

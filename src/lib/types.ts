@@ -36,6 +36,32 @@ export interface HistoricalEntryWithPositions extends HistoricalEntry {
   activePosition: number | null;
 }
 
+/** Which storage queue an entry belongs to in the consolidated queue view. */
+export type QueueSource = "regular" | "historical";
+
+/**
+ * A normalised entry from either queue, used when the historical and regular
+ * queues are shown/ranked together as one first-come, first-served queue.
+ */
+export interface CombinedEntry {
+  id: number;
+  source: QueueSource;
+  redditUsername: string;
+  whatsapp: string;
+  note: string | null;
+  status: EntryStatus;
+  createdAt: string;
+  /** Present only when source === "historical". */
+  messagedAt: string | null;
+}
+
+export interface CombinedEntryWithPositions extends CombinedEntry {
+  /** 1-based position in the combined queue (everyone who ever joined/messaged). */
+  position: number;
+  /** 1-based position among people still waiting to be served, or null for sold/skipped. */
+  activePosition: number | null;
+}
+
 export const ACTIVE_STATUSES: EntryStatus[] = ["waiting", "contacted"];
 
 export const STATUS_LABELS: Record<EntryStatus, string> = {

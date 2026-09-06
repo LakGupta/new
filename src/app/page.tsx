@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import JoinForm from "@/components/join-form";
+import LandingTabs from "@/components/landing-tabs";
 import ProductDetails from "@/components/product-details";
 import QueueExplainer from "@/components/queue-explainer";
 
@@ -104,9 +104,9 @@ export default function Home() {
           </span>
         </a>
 
-        {/* Join form */}
+        {/* Join / historical / check-position tabs */}
         <div id="join-form" className="animate-fade-up delay-6 mt-6 scroll-mt-6">
-          <JoinForm queueName="Amazfit Helio Strap" />
+          <LandingTabs queueName="Amazfit Helio Strap" />
         </div>
 
         {/* WhatsApp group (separate section, after the form) */}
@@ -172,7 +172,8 @@ export default function Home() {
         </section>
 
         <p className="mt-8 text-center font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground/70">
-          First come, first served · queue order = who joined first
+          First come, first served · historical + website entries share one
+          queue order
         </p>
 
         <Link

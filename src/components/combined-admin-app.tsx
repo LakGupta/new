@@ -4,72 +4,78 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ACTIVE_STATUSES,
   STATUSES,
-  STATUS_COLORS,
   STATUS_LABELS,
   type EntryStatus,
-  type EntryWithPositions,
+  type QueueSource,
+  type CombinedEntryWithPositions,
 } from "@/lib/types";
-import { redditProfileLink, whatsAppLink } from "@/lib/validation";
+import { QueueCard, StatCard } from "./admin-app";
 
 type AuthState = "checking" | "logged-out" | "logged-in";
 type Filter = EntryStatus | "all";
+type EntryKey = `${QueueSource}-${number}`;
 
-type EditForm = {
+interface AddForm {
   redditUsername: string;
   whatsapp: string;
   note: string;
-  messagedAt?: string;
+  messagedAt: string;
+}
+
+interface EditForm extends AddForm {
+  source: QueueSource;
+}
+
+const EMPTY_FORM: AddForm = {
+  redditUsername: "",
+  whatsapp: "",
+  note: "",
+  messagedAt: "",
 };
 
-const EMPTY_FORM = { redditUsername: "", whatsapp: "", note: "" };
-
-function formatDate(value: string): string {
-  try {
-    return new Date(value).toLocaleString(undefined, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
-  } catch {
-    return value;
-  }
+function toDatetimeLocal(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate(),
+  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function StatusPill({ status }: { status: EntryStatus }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${STATUS_COLORS[status]}`}
-    >
-      {STATUS_LABELS[status]}
-    </span>
-  );
+function entryKey(entry: CombinedEntryWithPositions): EntryKey {
+  return `${entry.source}-${entry.id}`;
 }
 
-export default function AdminApp() {
+export default function CombinedAdminApp() {
   const [authState, setAuthState] = useState<AuthState>("checking");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  const [entries, setEntries] = useState<EntryWithPositions[]>([]);
+  const [entries, setEntries] = useState<CombinedEntryWithPositions[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [showAdd, setShowAdd] = useState(false);
+  const [addSource, setAddSource] = useState<QueueSource>("regular");
   const [addForm, setAddForm] = useState(EMPTY_FORM);
   const [addError, setAddError] = useState<string | null>(null);
   const [addBusy, setAddBusy] = useState(false);
 
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editForm, setEditForm] = useState(EMPTY_FORM);
+  const [editingKey, setEditingKey] = useState<EntryKey | null>(null);
+  const [editForm, setEditForm] = useState<EditForm>({
+    ...EMPTY_FORM,
+    source: "regular",
+  });
   const [editError, setEditError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<number | null>(null);
+  const [busyId, setBusyId] = useState<EntryKey | null>(null);
 
   const loadEntries = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/entries");
+      const response = await fetch("/api/queue");
       if (response.status === 401) {
         setAuthState("logged-out");
         return;
@@ -78,7 +84,7 @@ export default function AdminApp() {
       if (!response.ok) {
         throw new Error(data.error || "Failed to load the queue.");
       }
-      setEntries(data.entries as EntryWithPositions[]);
+      setEntries(data.entries as CombinedEntryWithPositions[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load the queue.");
     } finally {
@@ -137,10 +143,19 @@ export default function AdminApp() {
     setAddError(null);
     setAddBusy(true);
     try {
-      const response = await fetch("/api/entries", {
+      const endpoint = addSource === "historical" ? "/api/historical" : "/api/entries";
+      const body =
+        addSource === "historical"
+          ? addForm
+          : {
+              redditUsername: addForm.redditUsername,
+              whatsapp: addForm.whatsapp,
+              note: addForm.note,
+            };
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(addForm),
+        body: JSON.stringify(body),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -157,14 +172,17 @@ export default function AdminApp() {
   }
 
   async function updateEntry(
+    source: QueueSource,
     id: number,
     patch: Record<string, unknown>,
-    nextEditingId: number | null = null,
   ) {
-    setBusyId(id);
+    const key = `${source}-${id}` as EntryKey;
+    setBusyId(key);
     setError(null);
     try {
-      const response = await fetch(`/api/entries/${id}`, {
+      const endpoint =
+        source === "historical" ? `/api/historical/${id}` : `/api/entries/${id}`;
+      const response = await fetch(endpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
@@ -172,9 +190,6 @@ export default function AdminApp() {
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Failed to update entry.");
-      }
-      if (nextEditingId !== null) {
-        setEditingId(nextEditingId);
       }
       await loadEntries();
     } catch (err) {
@@ -184,12 +199,16 @@ export default function AdminApp() {
     }
   }
 
-  async function handleDelete(id: number) {
-    if (!window.confirm("Delete this person from the queue?")) return;
-    setBusyId(id);
+  async function handleDelete(source: QueueSource, id: number) {
+    const label = source === "historical" ? "historical queue" : "queue";
+    if (!window.confirm(`Delete this person from the ${label}?`)) return;
+    const key = `${source}-${id}` as EntryKey;
+    setBusyId(key);
     setError(null);
     try {
-      const response = await fetch(`/api/entries/${id}`, { method: "DELETE" });
+      const endpoint =
+        source === "historical" ? `/api/historical/${id}` : `/api/entries/${id}`;
+      const response = await fetch(endpoint, { method: "DELETE" });
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || "Failed to delete entry.");
@@ -202,32 +221,54 @@ export default function AdminApp() {
     }
   }
 
-  function startEdit(entry: EntryWithPositions) {
-    setEditingId(entry.id);
+  function startEdit(entry: CombinedEntryWithPositions) {
+    setEditingKey(entryKey(entry));
     setEditError(null);
     setEditForm({
+      source: entry.source,
       redditUsername: entry.redditUsername,
       whatsapp: entry.whatsapp,
       note: entry.note ?? "",
+      messagedAt:
+        entry.source === "historical" && entry.messagedAt
+          ? toDatetimeLocal(entry.messagedAt)
+          : "",
     });
   }
 
   async function handleEditSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (editingId === null) return;
+    if (!editingKey) return;
+    const [source, idParam] = editingKey.split("-") as [QueueSource, string];
+    const id = Number(idParam);
     setEditError(null);
-    setBusyId(editingId);
+    setBusyId(editingKey);
     try {
-      const response = await fetch(`/api/entries/${editingId}`, {
+      const patch =
+        source === "historical"
+          ? {
+              redditUsername: editForm.redditUsername,
+              whatsapp: editForm.whatsapp,
+              note: editForm.note,
+              messagedAt: editForm.messagedAt,
+            }
+          : {
+              redditUsername: editForm.redditUsername,
+              whatsapp: editForm.whatsapp,
+              note: editForm.note,
+            };
+      const endpoint =
+        source === "historical" ? `/api/historical/${id}` : `/api/entries/${id}`;
+      const response = await fetch(endpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(patch),
       });
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Failed to save changes.");
       }
-      setEditingId(null);
+      setEditingKey(null);
       await loadEntries();
     } catch (err) {
       setEditError(err instanceof Error ? err.message : "Failed to save changes.");
@@ -238,12 +279,23 @@ export default function AdminApp() {
 
   const filteredEntries = useMemo(() => {
     const query = search.trim().toLowerCase();
+    // Search by digits so "98765 43210", "+91 98765 43210", or just
+    // "9876543210" all find entries stored as "919876543210".
+    const queryDigits = query.replace(/\D/g, "");
     return entries.filter((entry) => {
       if (filter !== "all" && entry.status !== filter) return false;
       if (!query) return true;
+
+      const entryDigits = entry.whatsapp;
+      const digitsMatch =
+        (queryDigits.length > 0 && entryDigits.includes(queryDigits)) ||
+        (queryDigits.length >= 10 &&
+          entryDigits.slice(-10) === queryDigits.slice(-10));
+
       return (
         entry.redditUsername.toLowerCase().includes(query) ||
-        entry.whatsapp.includes(query) ||
+        entryDigits.includes(query) ||
+        digitsMatch ||
         (entry.note ?? "").toLowerCase().includes(query)
       );
     });
@@ -258,6 +310,8 @@ export default function AdminApp() {
       unresolved: entries.filter(
         (e) => e.status === "no-response" || e.status === "skipped",
       ).length,
+      historical: entries.filter((e) => e.source === "historical").length,
+      regular: entries.filter((e) => e.source === "regular").length,
     }),
     [entries],
   );
@@ -284,7 +338,7 @@ export default function AdminApp() {
               Helios Queue
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Enter the admin password to manage the waitlist.
+              Enter the admin password to manage the combined waitlist.
             </p>
           </div>
 
@@ -293,13 +347,13 @@ export default function AdminApp() {
             className="rounded-2xl border border-border bg-card p-5"
           >
             <label
-              htmlFor="admin-password"
+              htmlFor="admin-password-combined"
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
               Password
             </label>
             <input
-              id="admin-password"
+              id="admin-password-combined"
               type="password"
               autoComplete="current-password"
               required
@@ -342,7 +396,8 @@ export default function AdminApp() {
             Helios Queue
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {entries.length} total · {stats.active} active
+            {entries.length} total · {stats.active} active · {stats.historical}{" "}
+            historical · {stats.regular} website
           </p>
         </div>
         <button
@@ -352,13 +407,6 @@ export default function AdminApp() {
           Log out
         </button>
       </header>
-
-      <a
-        href="/admin/historical"
-        className="mb-6 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm text-muted-foreground transition hover:text-accent"
-      >
-        Manage historical queue →
-      </a>
 
       {error ? (
         <div
@@ -458,16 +506,50 @@ export default function AdminApp() {
           className="mb-5 rounded-2xl border border-border bg-card p-5"
         >
           <h2 className="mb-4 text-lg font-semibold">Add someone manually</h2>
+
+          <div className="mb-4">
+            <span className="mb-1.5 block text-sm font-medium text-foreground">
+              Which queue?
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  { value: "regular", label: "Website queue" },
+                  { value: "historical", label: "Historical queue" },
+                ] as const
+              ).map((option) => {
+                const selected = addSource === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      setAddSource(option.value);
+                      setAddForm(EMPTY_FORM);
+                    }}
+                    className={`cursor-pointer rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
+                      selected
+                        ? "border-accent bg-accent/15 text-accent"
+                        : "border-border bg-background text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="space-y-4">
             <div>
               <label
-                htmlFor="add-reddit"
+                htmlFor="add-combined-reddit"
                 className="mb-1.5 block text-sm font-medium text-foreground"
               >
                 Reddit username
               </label>
               <input
-                id="add-reddit"
+                id="add-combined-reddit"
                 type="text"
                 required
                 value={addForm.redditUsername}
@@ -479,13 +561,13 @@ export default function AdminApp() {
             </div>
             <div>
               <label
-                htmlFor="add-whatsapp"
+                htmlFor="add-combined-whatsapp"
                 className="mb-1.5 block text-sm font-medium text-foreground"
               >
                 WhatsApp number
               </label>
               <input
-                id="add-whatsapp"
+                id="add-combined-whatsapp"
                 type="tel"
                 required
                 value={addForm.whatsapp}
@@ -496,15 +578,35 @@ export default function AdminApp() {
                 className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
               />
             </div>
+            {addSource === "historical" ? (
+              <div>
+                <label
+                  htmlFor="add-combined-messaged-at"
+                  className="mb-1.5 block text-sm font-medium text-foreground"
+                >
+                  Exact date &amp; time they messaged
+                </label>
+                <input
+                  id="add-combined-messaged-at"
+                  type="datetime-local"
+                  required
+                  value={addForm.messagedAt}
+                  onChange={(e) =>
+                    setAddForm({ ...addForm, messagedAt: e.target.value })
+                  }
+                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
+                />
+              </div>
+            ) : null}
             <div>
               <label
-                htmlFor="add-note"
+                htmlFor="add-combined-note"
                 className="mb-1.5 block text-sm font-medium text-foreground"
               >
                 Note <span className="text-muted-foreground">(optional)</span>
               </label>
               <textarea
-                id="add-note"
+                id="add-combined-note"
                 rows={2}
                 value={addForm.note}
                 onChange={(e) =>
@@ -558,403 +660,60 @@ export default function AdminApp() {
             </p>
           </div>
         ) : (
-          filteredEntries.map((entry) => (
-            <QueueCard
-              key={entry.id}
-              entry={entry}
-              busy={busyId === entry.id}
-              editing={editingId === entry.id}
-              editForm={editForm}
-              editError={editError}
-              onEditFormChange={setEditForm}
-              onEditSubmit={handleEditSubmit}
-              onCancelEdit={() => setEditingId(null)}
-              onStartEdit={() => startEdit(entry)}
-              onStatusChange={(status) => updateEntry(entry.id, { status })}
-              onSkip={() => updateEntry(entry.id, { status: "skipped" })}
-              onRestore={() => updateEntry(entry.id, { status: "waiting" })}
-              onDelete={() => handleDelete(entry.id)}
-            />
-          ))
+          filteredEntries.map((entry) => {
+            const key = entryKey(entry);
+            const editing = editingKey === key;
+            return (
+              <QueueCard
+                key={key}
+                entry={entry}
+                busy={busyId === key}
+                editing={editing}
+                editForm={{
+                  redditUsername: editForm.redditUsername,
+                  whatsapp: editForm.whatsapp,
+                  note: editForm.note,
+                  messagedAt: editForm.messagedAt,
+                }}
+                editError={editError}
+                onEditFormChange={(form) =>
+                  setEditForm({
+                    ...editForm,
+                    redditUsername: form.redditUsername,
+                    whatsapp: form.whatsapp,
+                    note: form.note,
+                    messagedAt: form.messagedAt ?? "",
+                  })
+                }
+                onEditSubmit={handleEditSubmit}
+                onCancelEdit={() => setEditingKey(null)}
+                onStartEdit={() => startEdit(entry)}
+                onStatusChange={(status) =>
+                  updateEntry(entry.source, entry.id, { status })
+                }
+                onSkip={() =>
+                  updateEntry(entry.source, entry.id, { status: "skipped" })
+                }
+                onRestore={() =>
+                  updateEntry(entry.source, entry.id, { status: "waiting" })
+                }
+                onDelete={() => handleDelete(entry.source, entry.id)}
+                timeLabel={entry.source === "historical" ? "Messaged" : "Joined"}
+                timeValue={
+                  entry.source === "historical"
+                    ? entry.messagedAt ?? entry.createdAt
+                    : entry.createdAt
+                }
+                showMessagedAt={entry.source === "historical"}
+                messagedAtValue={editForm.messagedAt}
+                onMessagedAtChange={(value) =>
+                  setEditForm({ ...editForm, messagedAt: value })
+                }
+              />
+            );
+          })
         )}
       </section>
     </main>
   );
 }
-
-function StatCard({
-  label,
-  value,
-  highlight = false,
-}: {
-  label: string;
-  value: number;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-xl border p-3 ${
-        highlight
-          ? "border-accent/40 bg-accent/10"
-          : "border-border bg-card"
-      }`}
-    >
-      <p className="font-mono text-2xl font-bold">{value}</p>
-      <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
-    </div>
-  );
-}
-
-export { StatCard };
-
-function QueueCard({
-  entry,
-  busy,
-  editing,
-  editForm,
-  editError,
-  onEditFormChange,
-  onEditSubmit,
-  onCancelEdit,
-  onStartEdit,
-  onStatusChange,
-  onSkip,
-  onRestore,
-  onDelete,
-  timeLabel = "Joined",
-  timeValue,
-  showMessagedAt = false,
-  messagedAtValue,
-  onMessagedAtChange,
-}: {
-  entry: EntryWithPositions;
-  busy: boolean;
-  editing: boolean;
-  editForm: EditForm;
-  editError: string | null;
-  onEditFormChange: (form: EditForm) => void;
-  onEditSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-  onCancelEdit: () => void;
-  onStartEdit: () => void;
-  onStatusChange: (status: EntryStatus) => void;
-  onSkip: () => void;
-  onRestore: () => void;
-  onDelete: () => void;
-  timeLabel?: string;
-  timeValue?: string;
-  showMessagedAt?: boolean;
-  messagedAtValue?: string;
-  onMessagedAtChange?: (value: string) => void;
-}) {
-  const isActive = ACTIVE_STATUSES.includes(entry.status);
-  const redditLink = redditProfileLink(entry.redditUsername);
-  const waLink = whatsAppLink(
-    entry.whatsapp,
-    `Hi u/${entry.redditUsername}, your Amazfit Helios strap is ready!`,
-  );
-
-  return (
-    <article
-      className={`rounded-2xl border bg-card p-4 ${
-        isActive ? "border-border" : "border-border/60 opacity-80"
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        <div
-          className={`flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl border ${
-            isActive
-              ? "border-accent/50 bg-accent/15 text-accent"
-              : "border-border bg-muted text-muted-foreground"
-          }`}
-        >
-          <span className="font-mono text-lg font-bold leading-none">
-            {entry.activePosition ?? entry.position}
-          </span>
-          <span className="mt-0.5 text-[9px] uppercase tracking-wider opacity-80">
-            {isActive ? "active" : "orig"}
-          </span>
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate font-semibold">u/{entry.redditUsername}</h3>
-            <StatusPill status={entry.status} />
-          </div>
-          <p className="mt-0.5 font-mono text-sm text-muted-foreground">
-            +{entry.whatsapp}
-          </p>
-          {entry.note ? (
-            <div className="mt-2 rounded-xl border border-amber-400/20 bg-amber-500/5 px-3 py-2.5">
-              <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-amber-300/90">
-                Note
-              </p>
-              <p className="mt-1 whitespace-pre-wrap text-sm leading-5 text-foreground/80">
-                {entry.note}
-              </p>
-            </div>
-          ) : null}
-          <p className="mt-1 text-xs text-muted-foreground/80">
-            {timeLabel} {formatDate(timeValue ?? entry.createdAt)}
-            {entry.activePosition !== entry.position ? (
-              <span className="ml-2">· original #{entry.position}</span>
-            ) : null}
-          </p>
-        </div>
-      </div>
-
-      {editing ? (
-        <form onSubmit={onEditSubmit} className="mt-4 space-y-3 border-t border-border pt-4">
-          <div>
-            <label
-              htmlFor={`edit-reddit-${entry.id}`}
-              className="mb-1 block text-xs font-medium text-muted-foreground"
-            >
-              Reddit username
-            </label>
-            <input
-              id={`edit-reddit-${entry.id}`}
-              type="text"
-              required
-              value={editForm.redditUsername}
-              onChange={(e) =>
-                onEditFormChange({ ...editForm, redditUsername: e.target.value })
-              }
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:border-accent"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor={`edit-whatsapp-${entry.id}`}
-              className="mb-1 block text-xs font-medium text-muted-foreground"
-            >
-              WhatsApp number
-            </label>
-            <input
-              id={`edit-whatsapp-${entry.id}`}
-              type="tel"
-              required
-              value={editForm.whatsapp}
-              onChange={(e) =>
-                onEditFormChange({ ...editForm, whatsapp: e.target.value })
-              }
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:border-accent"
-            />
-          </div>
-          {showMessagedAt ? (
-            <div>
-              <label
-                htmlFor={`edit-messaged-at-${entry.id}`}
-                className="mb-1 block text-xs font-medium text-muted-foreground"
-              >
-                Messaged at (date &amp; time)
-              </label>
-              <input
-                id={`edit-messaged-at-${entry.id}`}
-                type="datetime-local"
-                required
-                value={messagedAtValue ?? ""}
-                onChange={(e) => onMessagedAtChange?.(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:border-accent"
-              />
-            </div>
-          ) : null}
-
-          <div>
-            <label
-              htmlFor={`edit-note-${entry.id}`}
-              className="mb-1 block text-xs font-medium text-muted-foreground"
-            >
-              Note
-            </label>
-            <textarea
-              id={`edit-note-${entry.id}`}
-              rows={2}
-              value={editForm.note}
-              onChange={(e) =>
-                onEditFormChange({ ...editForm, note: e.target.value })
-              }
-              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:border-accent"
-            />
-          </div>
-
-          {editError ? (
-            <div
-              role="alert"
-              className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
-              {editError}
-            </div>
-          ) : null}
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="submit"
-              disabled={busy}
-              className="cursor-pointer rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:bg-blue-400 disabled:opacity-60"
-            >
-              Save
-            </button>
-            <button
-              type="button"
-              onClick={onCancelEdit}
-              className="cursor-pointer rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground transition hover:text-foreground"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      ) : (
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-3">
-          <a
-            href={waLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-2 text-sm font-medium text-emerald-300 ring-1 ring-emerald-400/30 transition hover:bg-emerald-500/25"
-          >
-            <MessageIcon />
-            WhatsApp
-          </a>
-
-          <a
-            href={redditLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={`Open u/${entry.redditUsername} on Reddit`}
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-orange-500/10 px-3 py-2 text-sm font-medium text-orange-300 ring-1 ring-orange-400/30 transition hover:bg-orange-500/20"
-          >
-            <ExternalLinkIcon />
-            Reddit
-          </a>
-
-          <label className="sr-only" htmlFor={`status-${entry.id}`}>
-            Change status
-          </label>
-          <select
-            id={`status-${entry.id}`}
-            value={entry.status}
-            onChange={(e) => onStatusChange(e.target.value as EntryStatus)}
-            disabled={busy}
-            className="cursor-pointer rounded-lg border border-border bg-background px-2.5 py-2 text-sm text-foreground focus:border-accent disabled:opacity-60"
-          >
-            {STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {STATUS_LABELS[status]}
-              </option>
-            ))}
-          </select>
-
-          {isActive ? (
-            <button
-              onClick={onSkip}
-              disabled={busy}
-              className="cursor-pointer rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition hover:border-amber-400/40 hover:text-amber-300 disabled:opacity-60"
-            >
-              Skip
-            </button>
-          ) : (
-            <button
-              onClick={onRestore}
-              disabled={busy}
-              className="cursor-pointer rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground disabled:opacity-60"
-            >
-              Restore
-            </button>
-          )}
-
-          <button
-            onClick={onStartEdit}
-            disabled={busy}
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground disabled:opacity-60"
-          >
-            <EditIcon />
-            Edit
-          </button>
-
-          <button
-            onClick={onDelete}
-            disabled={busy}
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition hover:border-destructive/40 hover:text-destructive disabled:opacity-60"
-          >
-            <TrashIcon />
-            Delete
-          </button>
-        </div>
-      )}
-    </article>
-  );
-}
-
-function ExternalLinkIcon() {
-  return (
-    <svg
-      className="h-4 w-4"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M15 3h6v6" />
-      <path d="M10 14 21 3" />
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-    </svg>
-  );
-}
-
-function MessageIcon() {
-  return (
-    <svg
-      className="h-4 w-4"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-    </svg>
-  );
-}
-
-function EditIcon() {
-  return (
-    <svg
-      className="h-3.5 w-3.5"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-      <path d="m15 5 4 4" />
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg
-      className="h-3.5 w-3.5"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M3 6h18" />
-      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-    </svg>
-  );
-}
-
-export { QueueCard };
