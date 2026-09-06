@@ -146,6 +146,10 @@ export default function PositionLookup({
               <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
                 {results.length === 1 ? "1 result found" : `${results.length} results found`}
               </p>
+              <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs leading-5 text-muted-foreground">
+                Note: your queue number may go up if people before you in the
+                queue decide not to purchase.
+              </p>
               {results.map((entry) => (
                 <PositionResultCard
                   key={`${entry.source}-${entry.id}`}
