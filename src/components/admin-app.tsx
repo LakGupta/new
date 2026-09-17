@@ -650,7 +650,7 @@ function QueueCard({
   const redditLink = redditProfileLink(entry.redditUsername);
   const waLink = whatsAppLink(
     entry.whatsapp,
-    `Hi u/${entry.redditUsername}, your Amazfit Helios strap is ready!`,
+    "Hey man, I'm receiving the Amazfit stock soon. Please let me know if you're still interested. Please respond back with the address if you're interested, thanks",
   );
 
   return (
