@@ -1,6 +1,7 @@
 export const STATUSES = [
   "waiting",
   "contacted",
+  "interested",
   "sold",
   "no-response",
   "skipped",
@@ -62,11 +63,16 @@ export interface CombinedEntryWithPositions extends CombinedEntry {
   activePosition: number | null;
 }
 
-export const ACTIVE_STATUSES: EntryStatus[] = ["waiting", "contacted"];
+export const ACTIVE_STATUSES: EntryStatus[] = [
+  "waiting",
+  "contacted",
+  "interested",
+];
 
 export const STATUS_LABELS: Record<EntryStatus, string> = {
   waiting: "Waiting",
   contacted: "Contacted",
+  interested: "Interested",
   sold: "Sold",
   "no-response": "No response",
   skipped: "Skipped",
@@ -75,6 +81,7 @@ export const STATUS_LABELS: Record<EntryStatus, string> = {
 export const STATUS_COLORS: Record<EntryStatus, string> = {
   waiting: "bg-sky-500/15 text-sky-300 ring-sky-400/30",
   contacted: "bg-amber-500/15 text-amber-300 ring-amber-400/30",
+  interested: "bg-violet-500/15 text-violet-300 ring-violet-400/30",
   sold: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/30",
   "no-response": "bg-rose-500/15 text-rose-300 ring-rose-400/30",
   skipped: "bg-zinc-500/15 text-zinc-400 ring-zinc-400/20",
