@@ -49,6 +49,8 @@ Without a `DATABASE_URL`, data is saved to `.data/queue.json` in the project fol
 
 > If you use a Postgres provider that supplies a pooled connection string, use that as `DATABASE_URL`. `DATABASE_URL` and `POSTGRES_URL` are both accepted.
 
+> **Build uses webpack, not Turbopack.** `npm run build` is `next build --webpack`. Next.js 16 defaults its production build to Turbopack, and on Vercel that build fails to resolve the internal font module emitted by `next/font/google` (`Can't resolve '@vercel/turbopack-next/internal/font/google/font'`). Opting into webpack for the production build avoids it while keeping the Google fonts self-hosted and optimized. `next dev` still uses Turbopack.
+
 ## How queue positions work
 
 - Every person is assigned a permanent original position based on when they joined.
