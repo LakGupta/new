@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import DuplicateNotice from "@/components/duplicate-notice";
+import type { DuplicateEntryMatch } from "@/lib/types";
 
 function pad(value: number): string {
   return String(value).padStart(2, "0");
@@ -15,6 +17,9 @@ export default function HistoricalJoinForm() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [duplicates, setDuplicates] = useState<DuplicateEntryMatch[] | null>(
+    null,
+  );
 
   const monthOptions = useMemo(() => {
     const options: { value: string; label: string }[] = [];
@@ -62,6 +67,7 @@ export default function HistoricalJoinForm() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setDuplicates(null);
 
     if (!monthValue || !dayValue || !timeValue) {
       setError("Select the exact date and time you messaged us.");
@@ -83,6 +89,17 @@ export default function HistoricalJoinForm() {
       });
 
       const data = await response.json();
+
+      // Already on the list: show where they stand instead of adding them again.
+      if (
+        response.status === 409 &&
+        Array.isArray(data.duplicates) &&
+        data.duplicates.length > 0
+      ) {
+        setDuplicates(data.duplicates as DuplicateEntryMatch[]);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(data.error || "Something went wrong. Please try again.");
       }
@@ -93,6 +110,10 @@ export default function HistoricalJoinForm() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (duplicates) {
+    return <DuplicateNotice matches={duplicates} whatsapp={whatsapp} />;
   }
 
   if (submitted) {

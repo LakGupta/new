@@ -56,6 +56,21 @@ Without a `DATABASE_URL`, data is saved to `.data/queue.json` in the project fol
 - If you skip someone or mark them sold, the next active person automatically moves up.
 - Restore anyone back to `waiting` if they come back or you made a mistake.
 
+## Duplicate prevention
+
+Public submissions are rejected with `409 Conflict` when the same person is
+already in the queue, so nobody can hold two places:
+
+- Matching is by the normalised WhatsApp number (a stored `+91`/`0` prefix and a
+  plain 10-digit entry compare as the same number) **or** the Reddit username
+  (case-insensitive).
+- Both the regular and historical queues are checked together, so the same
+  person cannot appear in each.
+- The join forms show the existing position, status, and when the entry was
+  added instead of a generic error, with a shortcut to the position lookup.
+- Admins can still add intentional repeats: the check is skipped for
+  authenticated requests from the admin pages.
+
 ## Project structure
 
 ```text
@@ -71,9 +86,11 @@ src/
       auth/check/route.ts
   components/
     join-form.tsx            # Public submission form
+    duplicate-notice.tsx     # "Already in the queue" state + position
     admin-app.tsx            # Admin queue UI
   lib/
     db.ts                    # Postgres + JSON fallback data layer
+    duplicates.ts            # 409 responder for duplicate public joins
     auth.ts                  # Password + session cookie
     validation.ts            # Input validation + WhatsApp link helper
     types.ts                 # Queue statuses/types

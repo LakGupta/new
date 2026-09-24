@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHistoricalEntry, listHistoricalEntries } from "@/lib/db";
 import { isAdminRequest } from "@/lib/auth";
+import { rejectDuplicateSubmission } from "@/lib/duplicates";
 import { validateHistoricalEntryInput } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,14 @@ export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => null);
     const input = validateHistoricalEntryInput(body);
+
+    // Same guard as the regular queue: one person, one place. Checks both
+    // queues so a historical claim cannot duplicate a website entry.
+    if (!(await isAdminRequest())) {
+      const duplicate = await rejectDuplicateSubmission(input);
+      if (duplicate) return duplicate;
+    }
+
     const { entry, position } = await createHistoricalEntry(input);
     return NextResponse.json({ entry, position }, { status: 201 });
   } catch (error) {

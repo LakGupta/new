@@ -4,6 +4,8 @@ import postgres, { type Sql } from "postgres";
 import type {
   CombinedEntry,
   CombinedEntryWithPositions,
+  DuplicateEntryMatch,
+  DuplicateMatchField,
   Entry,
   EntryStatus,
   EntryWithPositions,
@@ -549,11 +551,52 @@ export async function findCombinedEntriesByWhatsApp(
   whatsapp: string,
 ): Promise<CombinedEntryWithPositions[]> {
   const entries = await listCombinedEntries();
-  const last10 = whatsapp.length > 10 ? whatsapp.slice(-10) : whatsapp;
+  const last10 = lastTenDigits(whatsapp);
 
-  return entries.filter((entry) => {
-    const storedLast10 =
-      entry.whatsapp.length > 10 ? entry.whatsapp.slice(-10) : entry.whatsapp;
-    return entry.whatsapp === whatsapp || storedLast10 === last10;
+  return entries.filter(
+    (entry) =>
+      entry.whatsapp === whatsapp || lastTenDigits(entry.whatsapp) === last10,
+  );
+}
+
+/**
+ * The trailing 10 digits of a normalised number, so a stored `+91`/`0` prefix
+ * and a typed plain mobile number still compare as the same person.
+ */
+function lastTenDigits(value: string): string {
+  return value.length > 10 ? value.slice(-10) : value;
+}
+
+// ---------------------------------------------------------------------------
+// Duplicate prevention (public queue joins)
+// ---------------------------------------------------------------------------
+
+/**
+ * Finds existing people a new public submission would duplicate, matching the
+ * normalised WhatsApp number (country prefix optional) OR the Reddit username
+ * (case-insensitive). The regular and historical queues are checked together,
+ * so one person cannot end up in the queue twice through either form.
+ *
+ * Returns an empty array when the submission is clear to insert.
+ */
+export async function findDuplicateEntries(input: {
+  redditUsername: string;
+  whatsapp: string;
+}): Promise<DuplicateEntryMatch[]> {
+  const entries = await listCombinedEntries();
+  const username = input.redditUsername.trim().toLowerCase();
+  const last10 = lastTenDigits(input.whatsapp);
+
+  return entries.flatMap((entry) => {
+    const matchedOn: DuplicateMatchField[] = [];
+
+    if (entry.whatsapp === input.whatsapp || lastTenDigits(entry.whatsapp) === last10) {
+      matchedOn.push("whatsapp");
+    }
+    if (entry.redditUsername.trim().toLowerCase() === username) {
+      matchedOn.push("redditUsername");
+    }
+
+    return matchedOn.length > 0 ? [{ entry, matchedOn }] : [];
   });
 }

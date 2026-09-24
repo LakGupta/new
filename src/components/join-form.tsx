@@ -1,22 +1,33 @@
 "use client";
 
 import { useState } from "react";
+import DuplicateNotice from "@/components/duplicate-notice";
+import type { DuplicateEntryMatch } from "@/lib/types";
 
 interface JoinFormProps {
   queueName?: string;
+  /** Lets the notice jump to the Check position tab with the number prefilled. */
+  onCheckPosition?: (whatsapp: string) => void;
 }
 
-export default function JoinForm({ queueName = "Amazfit Helios Strap" }: JoinFormProps) {
+export default function JoinForm({
+  queueName = "Amazfit Helios Strap",
+  onCheckPosition,
+}: JoinFormProps) {
   const [redditUsername, setRedditUsername] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [duplicates, setDuplicates] = useState<DuplicateEntryMatch[] | null>(
+    null,
+  );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setDuplicates(null);
     setSubmitting(true);
 
     try {
@@ -31,6 +42,17 @@ export default function JoinForm({ queueName = "Amazfit Helios Strap" }: JoinFor
       });
 
       const data = await response.json();
+
+      // Already on the list: show where they stand instead of adding them again.
+      if (
+        response.status === 409 &&
+        Array.isArray(data.duplicates) &&
+        data.duplicates.length > 0
+      ) {
+        setDuplicates(data.duplicates as DuplicateEntryMatch[]);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(data.error || "Something went wrong. Please try again.");
       }
@@ -41,6 +63,16 @@ export default function JoinForm({ queueName = "Amazfit Helios Strap" }: JoinFor
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (duplicates) {
+    return (
+      <DuplicateNotice
+        matches={duplicates}
+        whatsapp={whatsapp}
+        onCheckPosition={onCheckPosition}
+      />
+    );
   }
 
   if (submitted) {
@@ -130,7 +162,7 @@ export default function JoinForm({ queueName = "Amazfit Helios Strap" }: JoinFor
             maxLength={500}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Colour preference, size, anything you want us to know."
+            placeholder="Something you may want us to know"
             className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
           />
         </div>

@@ -31,6 +31,8 @@ export default function LandingTabs({
   queueName?: string;
 }) {
   const [activeTab, setActiveTab] = useState<TabId>(defaultTab);
+  // Seeded when a duplicate notice sends someone to the position lookup.
+  const [lookupSeed, setLookupSeed] = useState("");
   const active = TABS.find((tab) => tab.id === activeTab) ?? TABS[0];
 
   return (
@@ -79,9 +81,21 @@ export default function LandingTabs({
         id={`waitlist-panel-${activeTab}`}
         aria-labelledby={`waitlist-tab-${activeTab}`}
       >
-        {activeTab === "join" ? <JoinForm queueName={queueName} /> : null}
+        {activeTab === "join" ? (
+          <JoinForm
+            queueName={queueName}
+            onCheckPosition={(whatsapp) => {
+              setLookupSeed(whatsapp);
+              setActiveTab("position");
+            }}
+          />
+        ) : null}
         {activeTab === "position" ? (
-          <PositionLookup queueName={queueName} />
+          <PositionLookup
+            key={lookupSeed}
+            queueName={queueName}
+            initialWhatsapp={lookupSeed}
+          />
         ) : null}
       </div>
     </div>

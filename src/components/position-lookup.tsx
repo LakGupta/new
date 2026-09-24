@@ -31,10 +31,13 @@ function StatusPill({ status }: { status: CombinedEntryWithPositions["status"] }
 
 export default function PositionLookup({
   queueName = "Amazfit Helio Strap",
+  initialWhatsapp = "",
 }: {
   queueName?: string;
+  /** Prefills the field, e.g. when arrived from a duplicate notice. */
+  initialWhatsapp?: string;
 }) {
-  const [whatsapp, setWhatsapp] = useState("");
+  const [whatsapp, setWhatsapp] = useState(initialWhatsapp);
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [results, setResults] = useState<CombinedEntryWithPositions[] | null>(

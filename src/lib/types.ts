@@ -63,6 +63,19 @@ export interface CombinedEntryWithPositions extends CombinedEntry {
   activePosition: number | null;
 }
 
+/** Which field(s) of a new submission collided with an existing queue entry. */
+export type DuplicateMatchField = "whatsapp" | "redditUsername";
+
+/**
+ * An existing queue entry that a new public submission duplicates, plus the
+ * field(s) that caused the match. Returned by the duplicate check so the form
+ * can show the person where they already stand instead of adding them twice.
+ */
+export interface DuplicateEntryMatch {
+  entry: CombinedEntryWithPositions;
+  matchedOn: DuplicateMatchField[];
+}
+
 export const ACTIVE_STATUSES: EntryStatus[] = [
   "waiting",
   "contacted",
