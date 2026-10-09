@@ -57,7 +57,7 @@ Without a database, the app uses local JSON files in `.data/` (dev only). In pro
 - Join form: Reddit username (accepts `u/` prefix), WhatsApp (auto-appends `+91` for 10-digit Indian numbers), optional note
 - **No queue number shown** after submitting
 - Loading bar while submitting
-- "Details" accordion: price ₹13,000, PAN India complimentary shipping, F2F Bangalore, COD not available
+- "Details" accordion: price ₹12,600, PAN India complimentary shipping, F2F Bangalore, COD not available
 - "First come, first served" card + "What queue?" explainer with Person A/B example
 - WhatsApp group button as a separate section after the form
 - Product photos in `public/images/` (pulled from Amazfit/news sources)

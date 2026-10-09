@@ -6,7 +6,7 @@ export default function ProductDetails() {
   const [open, setOpen] = useState(false);
 
   const rows = [
-    { label: "Price", value: "₹13,000" },
+    { label: "Price", value: "₹12,600" },
     { label: "Shipping", value: "PAN India · complimentary" },
     { label: "Face-to-face", value: "Available in Bangalore" },
     { label: "COD", value: "Not available" },
