@@ -10,6 +10,7 @@ import {
   type CombinedEntryWithPositions,
 } from "@/lib/types";
 import { QueueCard, StatCard } from "./admin-app";
+import AdminNotesPanel from "./admin-notes-panel";
 
 type AuthState = "checking" | "logged-out" | "logged-in";
 type Filter = EntryStatus | "all";
@@ -137,6 +138,12 @@ export default function CombinedAdminApp() {
     setAuthState("logged-out");
     setEntries([]);
   }
+
+  /** The session expired mid-save; drop straight back to the login screen. */
+  const handleUnauthorized = useCallback(() => {
+    setAuthState("logged-out");
+    setEntries([]);
+  }, []);
 
   async function handleCreateEntry(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -385,7 +392,7 @@ export default function CombinedAdminApp() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-10">
+    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-10">
       {/* Header */}
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
@@ -417,303 +424,314 @@ export default function CombinedAdminApp() {
         </div>
       ) : null}
 
-      {/* Stats */}
-      <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <StatCard label="Active" value={stats.active} highlight />
-        <StatCard label="Waiting" value={stats.waiting} />
-        <StatCard label="Contacted" value={stats.contacted} />
-        <StatCard label="Sold" value={stats.sold} />
-        <StatCard label="No reply / skipped" value={stats.unresolved} />
-      </section>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="min-w-0">
+          {/* Stats */}
+          <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <StatCard label="Active" value={stats.active} highlight />
+            <StatCard label="Waiting" value={stats.waiting} />
+            <StatCard label="Contacted" value={stats.contacted} />
+            <StatCard label="Sold" value={stats.sold} />
+            <StatCard label="No reply / skipped" value={stats.unresolved} />
+          </section>
 
-      {/* Toolbar */}
-      <section className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <svg
-            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search username, WhatsApp, note…"
-            className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-4 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
-          />
-        </div>
-        <button
-          onClick={() => {
-            setShowAdd((v) => !v);
-            setAddError(null);
-          }}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition hover:bg-blue-400 active:scale-[0.98]"
-        >
-          <svg
-            className="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M5 12h14" />
-            <path d="M12 5v14" />
-          </svg>
-          {showAdd ? "Close" : "Add manually"}
-        </button>
-      </section>
-
-      {/* Filter chips */}
-      <section className="mb-5 flex gap-2 overflow-x-auto pb-1">
-        {(["all", ...STATUSES] as Filter[]).map((value) => {
-          const label = value === "all" ? "All" : STATUS_LABELS[value];
-          const count =
-            value === "all"
-              ? entries.length
-              : entries.filter((e) => e.status === value).length;
-          const active = filter === value;
-          return (
+          {/* Toolbar */}
+          <section className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <svg
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search username, WhatsApp, note…"
+                className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-4 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
+              />
+            </div>
             <button
-              key={value}
-              onClick={() => setFilter(value)}
-              className={`shrink-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+              onClick={() => {
+                setShowAdd((v) => !v);
+                setAddError(null);
+              }}
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition hover:bg-blue-400 active:scale-[0.98]"
+            >
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12h14" />
+                <path d="M12 5v14" />
+              </svg>
+              {showAdd ? "Close" : "Add manually"}
+            </button>
+          </section>
+
+          {/* Filter chips */}
+          <section className="mb-5 flex gap-2 overflow-x-auto pb-1">
+            {(["all", ...STATUSES] as Filter[]).map((value) => {
+              const label = value === "all" ? "All" : STATUS_LABELS[value];
+              const count =
+                value === "all"
+                  ? entries.length
+                  : entries.filter((e) => e.status === value).length;
+              const active = filter === value;
+              return (
+                <button
+                  key={value}
+                  onClick={() => setFilter(value)}
+                  className={`shrink-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
                 active
                   ? "border-accent bg-accent/15 text-accent"
                   : "border-border bg-card text-muted-foreground hover:text-foreground"
               }`}
+                >
+                  {label} · {count}
+                </button>
+              );
+            })}
+          </section>
+
+          {/* Add manually */}
+          {showAdd ? (
+            <form
+              onSubmit={handleCreateEntry}
+              className="mb-5 rounded-2xl border border-border bg-card p-5"
             >
-              {label} · {count}
-            </button>
-          );
-        })}
-      </section>
+              <h2 className="mb-4 text-lg font-semibold">Add someone manually</h2>
 
-      {/* Add manually */}
-      {showAdd ? (
-        <form
-          onSubmit={handleCreateEntry}
-          className="mb-5 rounded-2xl border border-border bg-card p-5"
-        >
-          <h2 className="mb-4 text-lg font-semibold">Add someone manually</h2>
-
-          <div className="mb-4">
-            <span className="mb-1.5 block text-sm font-medium text-foreground">
-              Which queue?
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              {(
-                [
-                  { value: "regular", label: "Website queue" },
-                  { value: "historical", label: "Historical queue" },
-                ] as const
-              ).map((option) => {
-                const selected = addSource === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => {
-                      setAddSource(option.value);
-                      setAddForm(EMPTY_FORM);
-                    }}
-                    className={`cursor-pointer rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
+              <div className="mb-4">
+                <span className="mb-1.5 block text-sm font-medium text-foreground">
+                  Which queue?
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  {(
+                    [
+                      { value: "regular", label: "Website queue" },
+                      { value: "historical", label: "Historical queue" },
+                    ] as const
+                  ).map((option) => {
+                    const selected = addSource === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          setAddSource(option.value);
+                          setAddForm(EMPTY_FORM);
+                        }}
+                        className={`cursor-pointer rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
                       selected
                         ? "border-accent bg-accent/15 text-accent"
                         : "border-border bg-background text-muted-foreground hover:text-foreground"
                     }`}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="add-combined-reddit"
+                    className="mb-1.5 block text-sm font-medium text-foreground"
                   >
-                    {option.label}
+                    Reddit username
+                  </label>
+                  <input
+                    id="add-combined-reddit"
+                    type="text"
+                    required
+                    value={addForm.redditUsername}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, redditUsername: e.target.value })
+                    }
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="add-combined-whatsapp"
+                    className="mb-1.5 block text-sm font-medium text-foreground"
+                  >
+                    WhatsApp number
+                  </label>
+                  <input
+                    id="add-combined-whatsapp"
+                    type="tel"
+                    required
+                    value={addForm.whatsapp}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, whatsapp: e.target.value })
+                    }
+                    placeholder="98765 43210"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
+                  />
+                </div>
+                {addSource === "historical" ? (
+                  <div>
+                    <label
+                      htmlFor="add-combined-messaged-at"
+                      className="mb-1.5 block text-sm font-medium text-foreground"
+                    >
+                      Exact date &amp; time they messaged
+                    </label>
+                    <input
+                      id="add-combined-messaged-at"
+                      type="datetime-local"
+                      required
+                      value={addForm.messagedAt}
+                      onChange={(e) =>
+                        setAddForm({ ...addForm, messagedAt: e.target.value })
+                      }
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
+                    />
+                  </div>
+                ) : null}
+                <div>
+                  <label
+                    htmlFor="add-combined-note"
+                    className="mb-1.5 block text-sm font-medium text-foreground"
+                  >
+                    Note <span className="text-muted-foreground">(optional)</span>
+                  </label>
+                  <textarea
+                    id="add-combined-note"
+                    rows={2}
+                    value={addForm.note}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, note: e.target.value })
+                    }
+                    className="w-full resize-none rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
+                  />
+                </div>
+
+                {addError ? (
+                  <div
+                    role="alert"
+                    className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                  >
+                    {addError}
+                  </div>
+                ) : null}
+
+                <div className="flex gap-3">
+                  <button
+                    type="submit"
+                    disabled={addBusy}
+                    className="flex-1 cursor-pointer rounded-xl bg-accent py-2.5 text-sm font-semibold text-accent-foreground transition hover:bg-blue-400 disabled:opacity-60"
+                  >
+                    {addBusy ? "Adding…" : "Add to queue"}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAdd(false)}
+                    className="cursor-pointer rounded-xl border border-border px-4 py-2.5 text-sm text-muted-foreground transition hover:text-foreground"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </form>
+          ) : null}
+
+          {/* Queue list */}
+          <section className="space-y-3">
+            {loading ? (
+              <p className="py-10 text-center font-mono text-sm uppercase tracking-[0.3em] text-muted-foreground">
+                Loading…
+              </p>
+            ) : filteredEntries.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border py-14 text-center">
+                <p className="text-sm text-muted-foreground">
+                  {entries.length === 0
+                    ? "No one has joined the queue yet."
+                    : "No entries match this filter."}
+                </p>
+              </div>
+            ) : (
+              filteredEntries.map((entry) => {
+                const key = entryKey(entry);
+                const editing = editingKey === key;
+                return (
+                  <QueueCard
+                    key={key}
+                    entry={entry}
+                    busy={busyId === key}
+                    editing={editing}
+                    editForm={{
+                      redditUsername: editForm.redditUsername,
+                      whatsapp: editForm.whatsapp,
+                      note: editForm.note,
+                      messagedAt: editForm.messagedAt,
+                    }}
+                    editError={editError}
+                    onEditFormChange={(form) =>
+                      setEditForm({
+                        ...editForm,
+                        redditUsername: form.redditUsername,
+                        whatsapp: form.whatsapp,
+                        note: form.note,
+                        messagedAt: form.messagedAt ?? "",
+                      })
+                    }
+                    onEditSubmit={handleEditSubmit}
+                    onCancelEdit={() => setEditingKey(null)}
+                    onStartEdit={() => startEdit(entry)}
+                    onStatusChange={(status) =>
+                      updateEntry(entry.source, entry.id, { status })
+                    }
+                    onSkip={() =>
+                      updateEntry(entry.source, entry.id, { status: "skipped" })
+                    }
+                    onRestore={() =>
+                      updateEntry(entry.source, entry.id, { status: "waiting" })
+                    }
+                    onDelete={() => handleDelete(entry.source, entry.id)}
+                    timeLabel={entry.source === "historical" ? "Messaged" : "Joined"}
+                    timeValue={
+                      entry.source === "historical"
+                        ? entry.messagedAt ?? entry.createdAt
+                        : entry.createdAt
+                    }
+                    showMessagedAt={entry.source === "historical"}
+                    messagedAtValue={editForm.messagedAt}
+                    onMessagedAtChange={(value) =>
+                      setEditForm({ ...editForm, messagedAt: value })
+                    }
+                  />
                 );
-              })}
-            </div>
+              })
+            )}
+          </section>
+        </div>
+
+        {/* The admin's own scratchpad, alongside the queue on wide screens. */}
+        <div className="order-first lg:order-none">
+          <div className="lg:sticky lg:top-6">
+            <AdminNotesPanel onUnauthorized={handleUnauthorized} />
           </div>
-
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="add-combined-reddit"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                Reddit username
-              </label>
-              <input
-                id="add-combined-reddit"
-                type="text"
-                required
-                value={addForm.redditUsername}
-                onChange={(e) =>
-                  setAddForm({ ...addForm, redditUsername: e.target.value })
-                }
-                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="add-combined-whatsapp"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                WhatsApp number
-              </label>
-              <input
-                id="add-combined-whatsapp"
-                type="tel"
-                required
-                value={addForm.whatsapp}
-                onChange={(e) =>
-                  setAddForm({ ...addForm, whatsapp: e.target.value })
-                }
-                placeholder="98765 43210"
-                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
-              />
-            </div>
-            {addSource === "historical" ? (
-              <div>
-                <label
-                  htmlFor="add-combined-messaged-at"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
-                >
-                  Exact date &amp; time they messaged
-                </label>
-                <input
-                  id="add-combined-messaged-at"
-                  type="datetime-local"
-                  required
-                  value={addForm.messagedAt}
-                  onChange={(e) =>
-                    setAddForm({ ...addForm, messagedAt: e.target.value })
-                  }
-                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
-                />
-              </div>
-            ) : null}
-            <div>
-              <label
-                htmlFor="add-combined-note"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                Note <span className="text-muted-foreground">(optional)</span>
-              </label>
-              <textarea
-                id="add-combined-note"
-                rows={2}
-                value={addForm.note}
-                onChange={(e) =>
-                  setAddForm({ ...addForm, note: e.target.value })
-                }
-                className="w-full resize-none rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
-              />
-            </div>
-
-            {addError ? (
-              <div
-                role="alert"
-                className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-              >
-                {addError}
-              </div>
-            ) : null}
-
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={addBusy}
-                className="flex-1 cursor-pointer rounded-xl bg-accent py-2.5 text-sm font-semibold text-accent-foreground transition hover:bg-blue-400 disabled:opacity-60"
-              >
-                {addBusy ? "Adding…" : "Add to queue"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowAdd(false)}
-                className="cursor-pointer rounded-xl border border-border px-4 py-2.5 text-sm text-muted-foreground transition hover:text-foreground"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </form>
-      ) : null}
-
-      {/* Queue list */}
-      <section className="space-y-3">
-        {loading ? (
-          <p className="py-10 text-center font-mono text-sm uppercase tracking-[0.3em] text-muted-foreground">
-            Loading…
-          </p>
-        ) : filteredEntries.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border py-14 text-center">
-            <p className="text-sm text-muted-foreground">
-              {entries.length === 0
-                ? "No one has joined the queue yet."
-                : "No entries match this filter."}
-            </p>
-          </div>
-        ) : (
-          filteredEntries.map((entry) => {
-            const key = entryKey(entry);
-            const editing = editingKey === key;
-            return (
-              <QueueCard
-                key={key}
-                entry={entry}
-                busy={busyId === key}
-                editing={editing}
-                editForm={{
-                  redditUsername: editForm.redditUsername,
-                  whatsapp: editForm.whatsapp,
-                  note: editForm.note,
-                  messagedAt: editForm.messagedAt,
-                }}
-                editError={editError}
-                onEditFormChange={(form) =>
-                  setEditForm({
-                    ...editForm,
-                    redditUsername: form.redditUsername,
-                    whatsapp: form.whatsapp,
-                    note: form.note,
-                    messagedAt: form.messagedAt ?? "",
-                  })
-                }
-                onEditSubmit={handleEditSubmit}
-                onCancelEdit={() => setEditingKey(null)}
-                onStartEdit={() => startEdit(entry)}
-                onStatusChange={(status) =>
-                  updateEntry(entry.source, entry.id, { status })
-                }
-                onSkip={() =>
-                  updateEntry(entry.source, entry.id, { status: "skipped" })
-                }
-                onRestore={() =>
-                  updateEntry(entry.source, entry.id, { status: "waiting" })
-                }
-                onDelete={() => handleDelete(entry.source, entry.id)}
-                timeLabel={entry.source === "historical" ? "Messaged" : "Joined"}
-                timeValue={
-                  entry.source === "historical"
-                    ? entry.messagedAt ?? entry.createdAt
-                    : entry.createdAt
-                }
-                showMessagedAt={entry.source === "historical"}
-                messagedAtValue={editForm.messagedAt}
-                onMessagedAtChange={(value) =>
-                  setEditForm({ ...editForm, messagedAt: value })
-                }
-              />
-            );
-          })
-        )}
-      </section>
+        </div>
+      </div>
     </main>
   );
 }

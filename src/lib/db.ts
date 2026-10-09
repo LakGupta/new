@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import postgres, { type Sql } from "postgres";
 import type {
+  AdminNotes,
   CombinedEntry,
   CombinedEntryWithPositions,
   DuplicateEntryMatch,
@@ -25,6 +26,7 @@ const isPostgres = Boolean(DATABASE_URL);
 let sql: Sql<Record<string, never>> | null = null;
 let ensurePromise: Promise<void> | null = null;
 let ensureHistoricalPromise: Promise<void> | null = null;
+let ensureNotesPromise: Promise<void> | null = null;
 
 function getSql(): Sql<Record<string, never>> {
   if (!sql) {
@@ -75,6 +77,21 @@ function ensureHistoricalTable(): Promise<void> {
   return ensureHistoricalPromise;
 }
 
+function ensureNotesTable(): Promise<void> {
+  if (!ensureNotesPromise) {
+    // A single-row table: the admin keeps one shared scratchpad, so id is
+    // pinned to 1 and every write upserts that row.
+    ensureNotesPromise = getSql()`
+      CREATE TABLE IF NOT EXISTS admin_notes (
+        id SMALLINT PRIMARY KEY,
+        content TEXT NOT NULL DEFAULT '',
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `.then(() => undefined);
+  }
+  return ensureNotesPromise;
+}
+
 interface EntryRow {
   id: number;
   reddit_username: string;
@@ -84,6 +101,11 @@ interface EntryRow {
   created_at: Date | string;
 }
 
+/** Postgres hands back Date objects; JSON fallback and some drivers hand back strings. */
+function toIso(value: Date | string): string {
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+
 function mapRow(row: EntryRow): Entry {
   return {
     id: row.id,
@@ -91,10 +113,7 @@ function mapRow(row: EntryRow): Entry {
     whatsapp: row.whatsapp,
     note: row.note,
     status: row.status,
-    createdAt:
-      row.created_at instanceof Date
-        ? row.created_at.toISOString()
-        : new Date(row.created_at).toISOString(),
+    createdAt: toIso(row.created_at),
   };
 }
 
@@ -105,10 +124,7 @@ interface HistoricalEntryRow extends EntryRow {
 function mapHistoricalRow(row: HistoricalEntryRow): HistoricalEntry {
   return {
     ...mapRow(row),
-    messagedAt:
-      row.messaged_at instanceof Date
-        ? row.messaged_at.toISOString()
-        : new Date(row.messaged_at).toISOString(),
+    messagedAt: toIso(row.messaged_at),
   };
 }
 
@@ -119,6 +135,7 @@ function mapHistoricalRow(row: HistoricalEntryRow): HistoricalEntry {
 const DATA_DIR = path.join(process.cwd(), ".data");
 const DATA_FILE = path.join(DATA_DIR, "queue.json");
 const HISTORICAL_DATA_FILE = path.join(DATA_DIR, "historical-queue.json");
+const NOTES_DATA_FILE = path.join(DATA_DIR, "admin-notes.json");
 
 function ensureLocalJsonAllowed(): void {
   if (process.env.NODE_ENV === "production") {
@@ -164,6 +181,31 @@ async function writeJsonHistoricalEntries(
   await fs.writeFile(
     HISTORICAL_DATA_FILE,
     JSON.stringify(entries, null, 2),
+    "utf8",
+  );
+}
+
+async function readJsonNotes(): Promise<AdminNotes> {
+  ensureLocalJsonAllowed();
+  try {
+    const raw = await fs.readFile(NOTES_DATA_FILE, "utf8");
+    const parsed = JSON.parse(raw) as Partial<AdminNotes>;
+    return {
+      content: typeof parsed.content === "string" ? parsed.content : "",
+      updatedAt:
+        typeof parsed.updatedAt === "string" ? parsed.updatedAt : null,
+    };
+  } catch {
+    return { content: "", updatedAt: null };
+  }
+}
+
+async function writeJsonNotes(notes: AdminNotes): Promise<void> {
+  ensureLocalJsonAllowed();
+  await fs.mkdir(DATA_DIR, { recursive: true });
+  await fs.writeFile(
+    NOTES_DATA_FILE,
+    JSON.stringify(notes, null, 2),
     "utf8",
   );
 }
@@ -599,4 +641,38 @@ export async function findDuplicateEntries(input: {
 
     return matchedOn.length > 0 ? [{ entry, matchedOn }] : [];
   });
+}
+
+// ---------------------------------------------------------------------------
+// Admin notes (one shared scratchpad, shown beside the queue)
+// ---------------------------------------------------------------------------
+
+export async function getAdminNotes(): Promise<AdminNotes> {
+  if (isPostgres) {
+    await ensureNotesTable();
+    const rows = await getSql()<{ content: string; updated_at: Date | string }[]>`
+      SELECT content, updated_at FROM admin_notes WHERE id = 1
+    `;
+    if (!rows[0]) return { content: "", updatedAt: null };
+    return { content: rows[0].content, updatedAt: toIso(rows[0].updated_at) };
+  }
+
+  return readJsonNotes();
+}
+
+export async function saveAdminNotes(content: string): Promise<AdminNotes> {
+  if (isPostgres) {
+    await ensureNotesTable();
+    const rows = await getSql()<{ content: string; updated_at: Date | string }[]>`
+      INSERT INTO admin_notes (id, content, updated_at)
+      VALUES (1, ${content}, now())
+      ON CONFLICT (id) DO UPDATE SET content = EXCLUDED.content, updated_at = now()
+      RETURNING content, updated_at
+    `;
+    return { content: rows[0].content, updatedAt: toIso(rows[0].updated_at) };
+  }
+
+  const notes: AdminNotes = { content, updatedAt: new Date().toISOString() };
+  await writeJsonNotes(notes);
+  return notes;
 }

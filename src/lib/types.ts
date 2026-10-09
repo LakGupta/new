@@ -63,6 +63,19 @@ export interface CombinedEntryWithPositions extends CombinedEntry {
   activePosition: number | null;
 }
 
+/**
+ * Free-form notes the admin keeps for themselves, shown in the panel beside
+ * the queue. One shared scratchpad, not attached to any single entry.
+ */
+export interface AdminNotes {
+  content: string;
+  /** When the notes were last saved, or null if they have never been saved. */
+  updatedAt: string | null;
+}
+
+/** Longest note body the API will store. Shared so the textarea matches. */
+export const MAX_ADMIN_NOTES_LENGTH = 20000;
+
 /** Which field(s) of a new submission collided with an existing queue entry. */
 export type DuplicateMatchField = "whatsapp" | "redditUsername";
 

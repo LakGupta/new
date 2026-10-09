@@ -67,6 +67,7 @@ Without a database, the app uses local JSON files in `.data/` (dev only). In pro
 - New queue admin: search, status filter, stats, WhatsApp deep links, edit/delete/skip/restore, add manually
 - Historical queue admin at `/admin/historical`: same tools + editable "messaged at" datetime, sorted ascending by message time
 - Password-protected via cookie session (HMAC-signed, 7-day expiry)
+- **Admin notes scratchpad**: a panel beside the queue for the admin's own free-form notes (stock, prices, reminders). One shared scratchpad, not attached to any entry. Autosaves 800ms after typing stops, on blur, and on tab hide/close, with a live save-state indicator
 
 ---
 
@@ -95,6 +96,13 @@ status TEXT NOT NULL DEFAULT 'waiting'
 created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 ```
 
+### `admin_notes` (admin scratchpad)
+```sql
+id SMALLINT PRIMARY KEY          -- always 1: one shared scratchpad
+content TEXT NOT NULL DEFAULT ''
+updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+```
+
 Statuses: `waiting`, `contacted`, `sold`, `no-response`, `skipped`
 
 Historical entries are always loaded with `ORDER BY messaged_at ASC, created_at ASC, id ASC`. An index on `messaged_at` is created during setup.
@@ -114,6 +122,8 @@ Historical entries are always loaded with `ORDER BY messaged_at ASC, created_at 
 | POST | `/api/auth/login` | Public | Admin login (sets cookie) |
 | POST | `/api/auth/logout` | Admin | Clear session |
 | GET | `/api/auth/check` | Admin | Check session |
+| GET | `/api/notes` | Admin | Read the admin scratchpad |
+| PUT | `/api/notes` | Admin | Replace the admin scratchpad (`{ content }`, max 20,000 chars) |
 
 ---
 
@@ -131,6 +141,7 @@ src/
       entries/[id]/route.ts
       historical/route.ts
       historical/[id]/route.ts
+      notes/route.ts
       auth/login/route.ts
       auth/logout/route.ts
       auth/check/route.ts
@@ -141,6 +152,8 @@ src/
     queue-explainer.tsx         # "What queue?" accordion
     admin-app.tsx               # New queue admin UI
     historical-admin-app.tsx    # Historical queue admin UI
+    combined-admin-app.tsx      # Consolidated queue admin UI (used at /admin)
+    admin-notes-panel.tsx       # Autosaving admin scratchpad panel
   lib/
     db.ts                       # Postgres + JSON fallback data layer
     auth.ts                     # Password + session cookie helpers
