@@ -2,34 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MAX_ADMIN_NOTES_LENGTH, type AdminNotes } from "@/lib/types";
+import { SaveStatus, type LoadState, type SaveState } from "./save-status";
 
 /** How long typing has to pause before the scratchpad saves itself. */
 const AUTOSAVE_DELAY_MS = 800;
 /** Only start nagging about length once the notes get genuinely close. */
 const LENGTH_WARNING_AT = Math.floor(MAX_ADMIN_NOTES_LENGTH * 0.8);
-
-type LoadState = "loading" | "ready" | "error";
-type SaveState = "idle" | "saving" | "saved" | "error";
-
-function formatClock(value: string | null): string | null {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-function formatFull(value: string | null): string | undefined {
-  if (!value) return undefined;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return undefined;
-  return date.toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
 
 /**
  * A single free-form scratchpad the admin keeps for themselves: stock counts,
@@ -289,7 +267,7 @@ export default function AdminNotesPanel({
             placeholder={
               "e.g. 12 straps left · ₹12,600 each · message u/arjun next · 4 people waiting on COD"
             }
-            className="notes-scroll mt-3 min-h-36 w-full max-h-[40vh] resize-none overscroll-contain rounded-xl border border-border bg-background px-3.5 py-3 text-base leading-6 text-foreground placeholder:text-muted-foreground/80 focus:border-accent lg:min-h-88 lg:max-h-104"
+            className="panel-scroll mt-3 min-h-36 w-full max-h-[40vh] resize-none overscroll-contain rounded-xl border border-border bg-background px-3.5 py-3 text-base leading-6 text-foreground placeholder:text-muted-foreground/80 focus:border-accent lg:min-h-88 lg:max-h-104"
           />
 
           {saveState === "error" ? (
@@ -333,53 +311,6 @@ export default function AdminNotesPanel({
         </>
       )}
     </section>
-  );
-}
-
-function SaveStatus({
-  loadState,
-  saveState,
-  dirty,
-  lastSavedAt,
-}: {
-  loadState: LoadState;
-  saveState: SaveState;
-  dirty: boolean;
-  lastSavedAt: string | null;
-}) {
-  if (loadState === "loading") return null;
-
-  let dot: string;
-  let label: string;
-
-  if (saveState === "error") {
-    dot = "bg-rose-400";
-    label = "Not saved";
-  } else if (saveState === "saving") {
-    dot = "animate-pulse bg-accent";
-    label = "Saving…";
-  } else if (dirty) {
-    dot = "bg-amber-400";
-    label = "Unsaved changes";
-  } else if (lastSavedAt) {
-    const clock = formatClock(lastSavedAt);
-    dot = "bg-emerald-400";
-    label = clock ? `Saved ${clock}` : "Saved";
-  } else {
-    dot = "bg-zinc-500";
-    label = "Nothing saved yet";
-  }
-
-  return (
-    <p
-      role="status"
-      aria-live="polite"
-      title={formatFull(lastSavedAt)}
-      className="flex items-center gap-1.5 text-xs text-muted-foreground"
-    >
-      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} aria-hidden="true" />
-      {label}
-    </p>
   );
 }
 

@@ -66,6 +66,7 @@ Without a database, the app uses local JSON files in `.data/` (dev only). In pro
 ### Admin
 - New queue admin: search, status filter, stats, WhatsApp deep links, edit/delete/skip/restore, add manually
 - **The queue date is editable in the edit form** — "Joined at" for website entries, "Messaged at" for historical ones. The date is what orders the queue, so correcting it moves that person
+- **Amazfit stock counter** — a "straps left to sell" number the admin keeps by hand (with −/+ steppers, autosaved). Deliberately *not* derived from queue statuses: marking someone sold does not move it, because stock and queue statuses disagree in practice. Admin-only, never shown to buyers
 - Historical queue admin at `/admin/historical`: same tools + editable "messaged at" datetime, sorted ascending by message time
 - Password-protected via cookie session (HMAC-signed, 7-day expiry)
 - **Admin notes scratchpad**: a panel beside the queue for the admin's own free-form notes (stock, prices, reminders). One shared scratchpad, not attached to any entry. Autosaves 800ms after typing stops, on blur, and on tab hide/close, with a live save-state indicator
@@ -97,6 +98,13 @@ status TEXT NOT NULL DEFAULT 'waiting'
 created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 ```
 
+### `stock` (straps left to sell)
+```sql
+id SMALLINT PRIMARY KEY          -- always 1: one shared count
+remaining INTEGER                -- NULL = not counted yet (deliberately not 0)
+updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+```
+
 ### `admin_notes` (admin scratchpad)
 ```sql
 id SMALLINT PRIMARY KEY          -- always 1: one shared scratchpad
@@ -125,6 +133,8 @@ Historical entries are always loaded with `ORDER BY messaged_at ASC, created_at 
 | GET | `/api/auth/check` | Admin | Check session |
 | GET | `/api/notes` | Admin | Read the admin scratchpad |
 | PUT | `/api/notes` | Admin | Replace the admin scratchpad (`{ content }`, max 20,000 chars) |
+| GET | `/api/stock` | Admin | Read the hand-kept stock count |
+| PUT | `/api/stock` | Admin | Set the stock count (`{ remaining }`, integer or `null` to clear) |
 
 ---
 
@@ -143,6 +153,7 @@ src/
       historical/route.ts
       historical/[id]/route.ts
       notes/route.ts
+      stock/route.ts
       auth/login/route.ts
       auth/logout/route.ts
       auth/check/route.ts
@@ -155,6 +166,8 @@ src/
     historical-admin-app.tsx    # Historical queue admin UI
     combined-admin-app.tsx      # Consolidated queue admin UI (used at /admin)
     admin-notes-panel.tsx       # Autosaving admin scratchpad panel
+    stock-panel.tsx             # Hand-kept "straps left" counter
+    save-status.tsx             # Shared save-state indicator for both panels
   lib/
     db.ts                       # Postgres + JSON fallback data layer
     auth.ts                     # Password + session cookie helpers

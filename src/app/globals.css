@@ -50,33 +50,34 @@ html {
 }
 
 /* ---------------------------------------------------------------------------
-   Notes scratchpad
-   The one field in the admin that scrolls. Platform overlay scrollbars stay
-   invisible until you drag them, so draw a quiet one from the palette instead
-   of letting long notes disappear with no sign there is more.
+   Scrolling panels
+   The admin sidebar and the notes scratchpad are the places that scroll.
+   Platform overlay scrollbars stay invisible until you drag them, so draw a
+   quiet one from the palette instead of letting content disappear with no sign
+   that there is more.
    --------------------------------------------------------------------------- */
 
-.notes-scroll {
+.panel-scroll {
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
 }
 
-.notes-scroll::-webkit-scrollbar {
+.panel-scroll::-webkit-scrollbar {
   width: 12px;
 }
 
-.notes-scroll::-webkit-scrollbar-track {
+.panel-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.notes-scroll::-webkit-scrollbar-thumb {
+.panel-scroll::-webkit-scrollbar-thumb {
   border: 3px solid transparent;
   border-radius: 9999px;
   background-color: rgba(148, 163, 184, 0.4);
   background-clip: content-box;
 }
 
-.notes-scroll::-webkit-scrollbar-thumb:hover {
+.panel-scroll::-webkit-scrollbar-thumb:hover {
   background-color: rgba(148, 163, 184, 0.55);
 }
 

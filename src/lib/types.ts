@@ -76,6 +76,20 @@ export interface AdminNotes {
 /** Longest note body the API will store. Shared so the textarea matches. */
 export const MAX_ADMIN_NOTES_LENGTH = 20000;
 
+/**
+ * Straps the admin still has to sell, kept by hand. Deliberately *not* derived
+ * from queue statuses — marking someone sold must not silently move this number.
+ * `remaining` is null until the admin sets it, so "not counted yet" reads
+ * differently from "none left".
+ */
+export interface StockLevel {
+  remaining: number | null;
+  updatedAt: string | null;
+}
+
+/** Upper bound on a hand-kept count, to catch a mistyped number. */
+export const MAX_STOCK_QUANTITY = 100000;
+
 /** Which field(s) of a new submission collided with an existing queue entry. */
 export type DuplicateMatchField = "whatsapp" | "redditUsername";
 

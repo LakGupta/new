@@ -13,6 +13,7 @@ import type {
   HistoricalEntry,
   HistoricalEntryWithPositions,
   QueueSource,
+  StockLevel,
 } from "./types";
 import { ACTIVE_STATUSES } from "./types";
 
@@ -27,6 +28,7 @@ let sql: Sql<Record<string, never>> | null = null;
 let ensurePromise: Promise<void> | null = null;
 let ensureHistoricalPromise: Promise<void> | null = null;
 let ensureNotesPromise: Promise<void> | null = null;
+let ensureStockPromise: Promise<void> | null = null;
 
 function getSql(): Sql<Record<string, never>> {
   if (!sql) {
@@ -92,6 +94,21 @@ function ensureNotesTable(): Promise<void> {
   return ensureNotesPromise;
 }
 
+function ensureStockTable(): Promise<void> {
+  if (!ensureStockPromise) {
+    // Same singleton approach as admin_notes. `remaining` is nullable on
+    // purpose: null means the admin has not counted yet.
+    ensureStockPromise = getSql()`
+      CREATE TABLE IF NOT EXISTS stock (
+        id SMALLINT PRIMARY KEY,
+        remaining INTEGER,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `.then(() => undefined);
+  }
+  return ensureStockPromise;
+}
+
 interface EntryRow {
   id: number;
   reddit_username: string;
@@ -136,6 +153,7 @@ const DATA_DIR = path.join(process.cwd(), ".data");
 const DATA_FILE = path.join(DATA_DIR, "queue.json");
 const HISTORICAL_DATA_FILE = path.join(DATA_DIR, "historical-queue.json");
 const NOTES_DATA_FILE = path.join(DATA_DIR, "admin-notes.json");
+const STOCK_DATA_FILE = path.join(DATA_DIR, "stock.json");
 
 function ensureLocalJsonAllowed(): void {
   if (process.env.NODE_ENV === "production") {
@@ -206,6 +224,32 @@ async function writeJsonNotes(notes: AdminNotes): Promise<void> {
   await fs.writeFile(
     NOTES_DATA_FILE,
     JSON.stringify(notes, null, 2),
+    "utf8",
+  );
+}
+
+async function readJsonStock(): Promise<StockLevel> {
+  ensureLocalJsonAllowed();
+  try {
+    const raw = await fs.readFile(STOCK_DATA_FILE, "utf8");
+    const parsed = JSON.parse(raw) as Partial<StockLevel>;
+    return {
+      remaining:
+        typeof parsed.remaining === "number" ? parsed.remaining : null,
+      updatedAt:
+        typeof parsed.updatedAt === "string" ? parsed.updatedAt : null,
+    };
+  } catch {
+    return { remaining: null, updatedAt: null };
+  }
+}
+
+async function writeJsonStock(stock: StockLevel): Promise<void> {
+  ensureLocalJsonAllowed();
+  await fs.mkdir(DATA_DIR, { recursive: true });
+  await fs.writeFile(
+    STOCK_DATA_FILE,
+    JSON.stringify(stock, null, 2),
     "utf8",
   );
 }
@@ -680,4 +724,45 @@ export async function saveAdminNotes(content: string): Promise<AdminNotes> {
   const notes: AdminNotes = { content, updatedAt: new Date().toISOString() };
   await writeJsonNotes(notes);
   return notes;
+}
+
+// ---------------------------------------------------------------------------
+// Stock (straps left to sell, counted by hand)
+// ---------------------------------------------------------------------------
+
+export async function getStock(): Promise<StockLevel> {
+  if (isPostgres) {
+    await ensureStockTable();
+    const rows = await getSql()<{ remaining: number | null; updated_at: Date | string }[]>`
+      SELECT remaining, updated_at FROM stock WHERE id = 1
+    `;
+    if (!rows[0]) return { remaining: null, updatedAt: null };
+    return {
+      remaining: rows[0].remaining,
+      updatedAt: toIso(rows[0].updated_at),
+    };
+  }
+
+  return readJsonStock();
+}
+
+/** Passing null clears the count back to "not counted yet". */
+export async function saveStock(remaining: number | null): Promise<StockLevel> {
+  if (isPostgres) {
+    await ensureStockTable();
+    const rows = await getSql()<{ remaining: number | null; updated_at: Date | string }[]>`
+      INSERT INTO stock (id, remaining, updated_at)
+      VALUES (1, ${remaining}, now())
+      ON CONFLICT (id) DO UPDATE SET remaining = EXCLUDED.remaining, updated_at = now()
+      RETURNING remaining, updated_at
+    `;
+    return {
+      remaining: rows[0].remaining,
+      updatedAt: toIso(rows[0].updated_at),
+    };
+  }
+
+  const stock: StockLevel = { remaining, updatedAt: new Date().toISOString() };
+  await writeJsonStock(stock);
+  return stock;
 }

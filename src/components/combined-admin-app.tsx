@@ -11,6 +11,7 @@ import {
 } from "@/lib/types";
 import { QueueCard, StatCard } from "./admin-app";
 import AdminNotesPanel from "./admin-notes-panel";
+import StockPanel from "./stock-panel";
 
 type AuthState = "checking" | "logged-out" | "logged-in";
 type Filter = EntryStatus | "all";
@@ -855,9 +856,10 @@ export default function CombinedAdminApp() {
           </section>
         </div>
 
-        {/* The admin's own scratchpad, alongside the queue on wide screens. */}
+        {/* Stock and the admin's own scratchpad, alongside the queue on wide screens. */}
         <div className="order-first lg:order-none">
-          <div className="lg:sticky lg:top-6">
+          <div className="panel-scroll space-y-4 overscroll-contain lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto">
+            <StockPanel onUnauthorized={handleUnauthorized} />
             <AdminNotesPanel onUnauthorized={handleUnauthorized} />
           </div>
         </div>
