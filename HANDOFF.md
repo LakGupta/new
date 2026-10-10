@@ -65,6 +65,7 @@ Without a database, the app uses local JSON files in `.data/` (dev only). In pro
 
 ### Admin
 - New queue admin: search, status filter, stats, WhatsApp deep links, edit/delete/skip/restore, add manually
+- **The queue date is editable in the edit form** — "Joined at" for website entries, "Messaged at" for historical ones. The date is what orders the queue, so correcting it moves that person
 - Historical queue admin at `/admin/historical`: same tools + editable "messaged at" datetime, sorted ascending by message time
 - Password-protected via cookie session (HMAC-signed, 7-day expiry)
 - **Admin notes scratchpad**: a panel beside the queue for the admin's own free-form notes (stock, prices, reminders). One shared scratchpad, not attached to any entry. Autosaves 800ms after typing stops, on blur, and on tab hide/close, with a live save-state indicator
@@ -180,6 +181,7 @@ Netlify also works (build `npm run build`, publish `.next`) but Vercel is the sm
 ## 9. Known gotchas / decisions
 
 - **`@vercel/postgres` is deprecated** — the app uses `postgres` (postgres.js) with a standard `DATABASE_URL` instead.
+- **The entry date is the queue's ordering key** — `createdAt` for website entries, `messagedAt` for historical ones. It is editable from the admin edit form; `validateEntryInput` deliberately ignores `createdAt`, so the public join form can never backdate its own entry (only the admin PATCH accepts it).
 - **Do NOT put multiple SQL statements in one postgres.js template** — it causes `cannot insert multiple commands into a prepared statement`. Split into separate queries (see `ensureHistoricalTable` in `src/lib/db.ts`).
 - **Production without `DATABASE_URL`** throws a clear error; the `.data/` JSON fallback is dev-only.
 - **WhatsApp normalization**: 10-digit Indian numbers get `91` prepended; `0` prefix stripped; numbers that already have `+91` or another country code are kept as-is.

@@ -18,7 +18,6 @@ type EditForm = {
   redditUsername: string;
   whatsapp: string;
   note: string;
-  messagedAt?: string;
 };
 
 const EMPTY_FORM = { redditUsername: "", whatsapp: "", note: "" };
@@ -623,9 +622,7 @@ function QueueCard({
   onDelete,
   timeLabel = "Joined",
   timeValue,
-  showMessagedAt = false,
-  messagedAtValue,
-  onMessagedAtChange,
+  dateField,
 }: {
   entry: EntryWithPositions;
   busy: boolean;
@@ -642,9 +639,17 @@ function QueueCard({
   onDelete: () => void;
   timeLabel?: string;
   timeValue?: string;
-  showMessagedAt?: boolean;
-  messagedAtValue?: string;
-  onMessagedAtChange?: (value: string) => void;
+  /**
+   * The date the queue orders by, made editable. Which timestamp that is depends
+   * on the queue: `createdAt` for website entries, `messagedAt` for historical
+   * ones. Omitted entirely where a queue has no editable date.
+   */
+  dateField?: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    hint?: string;
+  };
 }) {
   const isActive = ACTIVE_STATUSES.includes(entry.status);
   const redditLink = redditProfileLink(entry.redditUsername);
@@ -740,22 +745,27 @@ function QueueCard({
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:border-accent"
             />
           </div>
-          {showMessagedAt ? (
+          {dateField ? (
             <div>
               <label
-                htmlFor={`edit-messaged-at-${entry.id}`}
+                htmlFor={`edit-date-${entry.id}`}
                 className="mb-1 block text-xs font-medium text-muted-foreground"
               >
-                Messaged at (date &amp; time)
+                {dateField.label} (date &amp; time)
               </label>
               <input
-                id={`edit-messaged-at-${entry.id}`}
+                id={`edit-date-${entry.id}`}
                 type="datetime-local"
                 required
-                value={messagedAtValue ?? ""}
-                onChange={(e) => onMessagedAtChange?.(e.target.value)}
+                value={dateField.value}
+                onChange={(e) => dateField.onChange(e.target.value)}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:border-accent"
               />
+              {dateField.hint ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {dateField.hint}
+                </p>
+              ) : null}
             </div>
           ) : null}
 

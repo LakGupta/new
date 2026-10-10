@@ -287,7 +287,9 @@ export async function createEntry(input: {
 
 export async function updateEntry(
   id: number,
-  patch: Partial<Pick<Entry, "redditUsername" | "whatsapp" | "note" | "status">>,
+  patch: Partial<
+    Pick<Entry, "redditUsername" | "whatsapp" | "note" | "status" | "createdAt">
+  >,
 ): Promise<Entry | null> {
   if (isPostgres) {
     await ensureTable();
@@ -304,6 +306,7 @@ export async function updateEntry(
       whatsapp: patch.whatsapp ?? existing.whatsapp,
       note: patch.note !== undefined ? patch.note : existing.note,
       status: patch.status ?? existing.status,
+      createdAt: patch.createdAt ?? existing.createdAt,
     };
 
     const rows = await getSql()<EntryRow[]>`
@@ -312,7 +315,8 @@ export async function updateEntry(
         reddit_username = ${merged.redditUsername},
         whatsapp = ${merged.whatsapp},
         note = ${merged.note},
-        status = ${merged.status}
+        status = ${merged.status},
+        created_at = ${merged.createdAt}
       WHERE id = ${id}
       RETURNING id, reddit_username, whatsapp, note, status, created_at
     `;
@@ -330,6 +334,7 @@ export async function updateEntry(
     whatsapp: patch.whatsapp ?? current.whatsapp,
     note: patch.note !== undefined ? patch.note : current.note,
     status: patch.status ?? current.status,
+    createdAt: patch.createdAt ?? current.createdAt,
   };
   entries[index] = updated;
   await writeJsonEntries(entries);

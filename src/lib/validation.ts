@@ -6,6 +6,14 @@ export interface EntryInput {
   note: string;
 }
 
+/**
+ * Admin-only partial update for a website entry. Everything in `EntryInput` is
+ * editable, plus the join date — which the queue orders by, so correcting it
+ * reorders the queue. `createdAt` is deliberately not part of `EntryInput`: the
+ * public join form must never be able to set its own timestamp.
+ */
+export type EntryPatchInput = Partial<EntryInput> & { createdAt?: string };
+
 export function normalizeWhatsApp(value: string): string {
   return value.replace(/[^\d]/g, "");
 }
@@ -79,13 +87,13 @@ export function validateEntryInput(input: unknown): EntryInput {
 
 export function validatePartialEntryInput(
   input: unknown,
-): Partial<EntryInput> {
+): EntryPatchInput {
   if (!input || typeof input !== "object") {
     throw new Error("Invalid data.");
   }
 
   const raw = input as Record<string, unknown>;
-  const patch: Partial<EntryInput> = {};
+  const patch: EntryPatchInput = {};
 
   if (raw.redditUsername !== undefined) {
     const value = normalizeRedditUsername(
@@ -116,6 +124,16 @@ export function validatePartialEntryInput(
     patch.note = value;
   }
 
+  // The join date doubles as the queue's ordering key, so correcting it moves
+  // the person. Only admins can reach this.
+  if (raw.createdAt !== undefined) {
+    const value = typeof raw.createdAt === "string" ? raw.createdAt.trim() : "";
+    if (!value) {
+      throw new Error("Enter the date and time they joined.");
+    }
+    patch.createdAt = normalizeDateTime(value, "Enter a valid date and time.");
+  }
+
   return patch;
 }
 
@@ -140,12 +158,20 @@ export interface HistoricalEntryInput {
   note: string;
 }
 
-function normalizeMessagedAt(value: string): string {
+/** Shared by both queues: every editable date is stored as an ISO timestamp. */
+function normalizeDateTime(value: string, message: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    throw new Error("Enter the exact date and time you messaged us.");
+    throw new Error(message);
   }
   return date.toISOString();
+}
+
+function normalizeMessagedAt(value: string): string {
+  return normalizeDateTime(
+    value,
+    "Enter the exact date and time you messaged us.",
+  );
 }
 
 export function validateHistoricalEntryInput(

@@ -12,6 +12,8 @@ type EntryPatch = Partial<{
   whatsapp: string;
   note: string;
   status: EntryStatus;
+  /** Admin-only: the join date, which is also the queue's ordering key. */
+  createdAt: string;
 }>;
 
 type RouteContext = {

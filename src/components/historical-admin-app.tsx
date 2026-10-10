@@ -564,10 +564,10 @@ export default function HistoricalAdminApp() {
               editError={editError}
               onEditFormChange={(form) =>
                 setEditForm({
+                  ...editForm,
                   redditUsername: form.redditUsername,
                   whatsapp: form.whatsapp,
                   note: form.note,
-                  messagedAt: form.messagedAt ?? "",
                 })
               }
               onEditSubmit={handleEditSubmit}
@@ -579,11 +579,13 @@ export default function HistoricalAdminApp() {
               onDelete={() => handleDelete(entry.id)}
               timeLabel="Messaged"
               timeValue={entry.messagedAt}
-              showMessagedAt
-              messagedAtValue={editForm.messagedAt}
-              onMessagedAtChange={(value) =>
-                setEditForm({ ...editForm, messagedAt: value })
-              }
+              dateField={{
+                label: "Messaged at",
+                value: editForm.messagedAt,
+                onChange: (value) =>
+                  setEditForm({ ...editForm, messagedAt: value }),
+                hint: "This is what orders the queue — changing it moves them.",
+              }}
             />
           ))
         )}

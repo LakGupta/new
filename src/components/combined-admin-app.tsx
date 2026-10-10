@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ACTIVE_STATUSES,
   STATUSES,
@@ -23,8 +23,17 @@ interface AddForm {
   messagedAt: string;
 }
 
-interface EditForm extends AddForm {
+interface EditForm {
   source: QueueSource;
+  redditUsername: string;
+  whatsapp: string;
+  note: string;
+  /**
+   * The date this entry is queued by, as a local `datetime-local` value. Sent
+   * back as `createdAt` for website entries and `messagedAt` for historical
+   * ones, so both queues can have their date corrected.
+   */
+  date: string;
 }
 
 const EMPTY_FORM: AddForm = {
@@ -33,6 +42,20 @@ const EMPTY_FORM: AddForm = {
   note: "",
   messagedAt: "",
 };
+
+const EMPTY_EDIT_FORM: EditForm = {
+  source: "regular",
+  redditUsername: "",
+  whatsapp: "",
+  note: "",
+  date: "",
+};
+
+/**
+ * Both queues are ordered by their date, so correcting one moves the person.
+ * Say so next to the field rather than letting it be a surprise.
+ */
+const MOVE_HINT = "This is what orders the queue — changing it moves them.";
 
 function toDatetimeLocal(value: string): string {
   const date = new Date(value);
@@ -45,6 +68,44 @@ function toDatetimeLocal(value: string): string {
 
 function entryKey(entry: CombinedEntryWithPositions): EntryKey {
   return `${entry.source}-${entry.id}`;
+}
+
+/**
+ * Recounts active positions over a queue that the server already ordered.
+ *
+ * Optimistic edits change who counts as active, which renumbers everyone still
+ * in play. The server does this in `rankCombinedEntries`; recounting here keeps
+ * the numbers honest during the round trip. Ordering is never recomputed — the
+ * array already arrived sorted — so only this counter can drift, and the silent
+ * refresh overwrites it a moment later anyway.
+ */
+function recountActivePositions(
+  entries: CombinedEntryWithPositions[],
+): CombinedEntryWithPositions[] {
+  let activeCount = 0;
+  return entries.map((entry) => {
+    const isActive = ACTIVE_STATUSES.includes(entry.status);
+    if (isActive) activeCount += 1;
+    return { ...entry, activePosition: isActive ? activeCount : null };
+  });
+}
+
+/**
+ * Turns a thrown error into something worth reading.
+ *
+ * fetch() rejects with a bare TypeError when the network itself fails, and a
+ * non-JSON error body (a platform or proxy error page) throws a SyntaxError
+ * whose text means nothing here. Neither should reach the admin raw.
+ */
+function describeError(
+  err: unknown,
+  fallback: string,
+  offline = "Couldn't reach the server — check your connection.",
+): string {
+  if (err instanceof TypeError) return offline;
+  if (err instanceof SyntaxError) return fallback;
+  if (err instanceof Error && err.message) return err.message;
+  return fallback;
 }
 
 export default function CombinedAdminApp() {
@@ -65,16 +126,25 @@ export default function CombinedAdminApp() {
   const [addBusy, setAddBusy] = useState(false);
 
   const [editingKey, setEditingKey] = useState<EntryKey | null>(null);
-  const [editForm, setEditForm] = useState<EditForm>({
-    ...EMPTY_FORM,
-    source: "regular",
-  });
+  const [editForm, setEditForm] = useState<EditForm>(EMPTY_EDIT_FORM);
   const [editError, setEditError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<EntryKey | null>(null);
 
-  const loadEntries = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // Mirrors of state that callbacks need to read synchronously: optimistic edits
+  // have to stack in the same tick, and only the newest refresh may win.
+  const entriesRef = useRef<CombinedEntryWithPositions[]>([]);
+  const loadIdRef = useRef(0);
+
+  useEffect(() => {
+    entriesRef.current = entries;
+  }, [entries]);
+
+  const loadEntries = useCallback(async ({ silent = false } = {}) => {
+    // Only the first load takes the list off screen. Anything triggered by an
+    // edit refreshes underneath the existing cards, so the page never collapses
+    // (which used to clamp the scroll position back to the top).
+    const requestId = ++loadIdRef.current;
+    if (!silent) setLoading(true);
     try {
       const response = await fetch("/api/queue");
       if (response.status === 401) {
@@ -85,12 +155,53 @@ export default function CombinedAdminApp() {
       if (!response.ok) {
         throw new Error(data.error || "Failed to load the queue.");
       }
-      setEntries(data.entries as CombinedEntryWithPositions[]);
+      // A newer load already landed; its data is fresher than ours.
+      if (requestId !== loadIdRef.current) return;
+      const next = data.entries as CombinedEntryWithPositions[];
+      entriesRef.current = next;
+      setEntries(next);
+      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load the queue.");
+      if (requestId !== loadIdRef.current) return;
+      setError(describeError(err, "Failed to load the queue."));
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
+  }, []);
+
+  /**
+   * Applies a change to one card immediately and hands back the queue as it was,
+   * so the caller can put it back if the server rejects the change.
+   */
+  const patchEntryOptimistically = useCallback(
+    (key: EntryKey, patch: Partial<CombinedEntryWithPositions>) => {
+      const previous = entriesRef.current;
+      const next = recountActivePositions(
+        previous.map((entry) =>
+          entryKey(entry) === key ? { ...entry, ...patch } : entry,
+        ),
+      );
+      entriesRef.current = next;
+      setEntries(next);
+      return previous;
+    },
+    [],
+  );
+
+  /** Drops a card without waiting for the server, returning the previous queue. */
+  const removeEntryOptimistically = useCallback((key: EntryKey) => {
+    const previous = entriesRef.current;
+    const next = recountActivePositions(
+      previous.filter((entry) => entryKey(entry) !== key),
+    );
+    entriesRef.current = next;
+    setEntries(next);
+    return previous;
+  }, []);
+
+  const restoreEntries = useCallback((previous: CombinedEntryWithPositions[]) => {
+    entriesRef.current = previous;
+    setEntries(previous);
   }, []);
 
   useEffect(() => {
@@ -170,9 +281,9 @@ export default function CombinedAdminApp() {
       }
       setAddForm(EMPTY_FORM);
       setShowAdd(false);
-      await loadEntries();
+      await loadEntries({ silent: true });
     } catch (err) {
-      setAddError(err instanceof Error ? err.message : "Failed to add entry.");
+      setAddError(describeError(err, "Failed to add entry."));
     } finally {
       setAddBusy(false);
     }
@@ -184,6 +295,7 @@ export default function CombinedAdminApp() {
     patch: Record<string, unknown>,
   ) {
     const key = `${source}-${id}` as EntryKey;
+    const previous = patchEntryOptimistically(key, patch);
     setBusyId(key);
     setError(null);
     try {
@@ -198,9 +310,11 @@ export default function CombinedAdminApp() {
       if (!response.ok) {
         throw new Error(data.error || "Failed to update entry.");
       }
-      await loadEntries();
+      // Reconcile ordering and counts with the server, invisibly.
+      await loadEntries({ silent: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update entry.");
+      restoreEntries(previous);
+      setError(describeError(err, "Failed to update entry.", "Couldn't reach the server — that change wasn't saved."));
     } finally {
       setBusyId(null);
     }
@@ -210,6 +324,7 @@ export default function CombinedAdminApp() {
     const label = source === "historical" ? "historical queue" : "queue";
     if (!window.confirm(`Delete this person from the ${label}?`)) return;
     const key = `${source}-${id}` as EntryKey;
+    const previous = removeEntryOptimistically(key);
     setBusyId(key);
     setError(null);
     try {
@@ -220,9 +335,10 @@ export default function CombinedAdminApp() {
         const data = await response.json();
         throw new Error(data.error || "Failed to delete entry.");
       }
-      await loadEntries();
+      await loadEntries({ silent: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete entry.");
+      restoreEntries(previous);
+      setError(describeError(err, "Failed to delete entry.", "Couldn't reach the server — that change wasn't saved."));
     } finally {
       setBusyId(null);
     }
@@ -231,15 +347,18 @@ export default function CombinedAdminApp() {
   function startEdit(entry: CombinedEntryWithPositions) {
     setEditingKey(entryKey(entry));
     setEditError(null);
+    // Both queues now expose their ordering date: the message time for
+    // historical entries, the join time for website ones.
+    const queuedAt =
+      entry.source === "historical"
+        ? entry.messagedAt ?? entry.createdAt
+        : entry.createdAt;
     setEditForm({
       source: entry.source,
       redditUsername: entry.redditUsername,
       whatsapp: entry.whatsapp,
       note: entry.note ?? "",
-      messagedAt:
-        entry.source === "historical" && entry.messagedAt
-          ? toDatetimeLocal(entry.messagedAt)
-          : "",
+      date: toDatetimeLocal(queuedAt),
     });
   }
 
@@ -250,6 +369,9 @@ export default function CombinedAdminApp() {
     const id = Number(idParam);
     setEditError(null);
     setBusyId(editingKey);
+    // Snapshot from just before the optimistic patch, so a rejected save can put
+    // the card back exactly as it was.
+    let previous: CombinedEntryWithPositions[] | null = null;
     try {
       const patch =
         source === "historical"
@@ -257,15 +379,22 @@ export default function CombinedAdminApp() {
               redditUsername: editForm.redditUsername,
               whatsapp: editForm.whatsapp,
               note: editForm.note,
-              messagedAt: editForm.messagedAt,
+              messagedAt: editForm.date,
             }
           : {
               redditUsername: editForm.redditUsername,
               whatsapp: editForm.whatsapp,
               note: editForm.note,
+              createdAt: editForm.date,
             };
       const endpoint =
         source === "historical" ? `/api/historical/${id}` : `/api/entries/${id}`;
+      // Show the new details on the card right away; a changed date re-sorts the
+      // person when the silent refresh below lands.
+      previous = patchEntryOptimistically(
+        editingKey,
+        patch as Partial<CombinedEntryWithPositions>,
+      );
       const response = await fetch(endpoint, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -276,9 +405,10 @@ export default function CombinedAdminApp() {
         throw new Error(data.error || "Failed to save changes.");
       }
       setEditingKey(null);
-      await loadEntries();
+      await loadEntries({ silent: true });
     } catch (err) {
-      setEditError(err instanceof Error ? err.message : "Failed to save changes.");
+      if (previous) restoreEntries(previous);
+      setEditError(describeError(err, "Failed to save changes.", "Couldn't reach the server — that change wasn't saved."));
     } finally {
       setBusyId(null);
     }
@@ -682,7 +812,6 @@ export default function CombinedAdminApp() {
                       redditUsername: editForm.redditUsername,
                       whatsapp: editForm.whatsapp,
                       note: editForm.note,
-                      messagedAt: editForm.messagedAt,
                     }}
                     editError={editError}
                     onEditFormChange={(form) =>
@@ -691,7 +820,6 @@ export default function CombinedAdminApp() {
                         redditUsername: form.redditUsername,
                         whatsapp: form.whatsapp,
                         note: form.note,
-                        messagedAt: form.messagedAt ?? "",
                       })
                     }
                     onEditSubmit={handleEditSubmit}
@@ -713,11 +841,13 @@ export default function CombinedAdminApp() {
                         ? entry.messagedAt ?? entry.createdAt
                         : entry.createdAt
                     }
-                    showMessagedAt={entry.source === "historical"}
-                    messagedAtValue={editForm.messagedAt}
-                    onMessagedAtChange={(value) =>
-                      setEditForm({ ...editForm, messagedAt: value })
-                    }
+                    dateField={{
+                      label:
+                        entry.source === "historical" ? "Messaged at" : "Joined at",
+                      value: editForm.date,
+                      onChange: (value) => setEditForm({ ...editForm, date: value }),
+                      hint: MOVE_HINT,
+                    }}
                   />
                 );
               })
