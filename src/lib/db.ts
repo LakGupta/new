@@ -34,7 +34,7 @@ function getSql(): Sql<Record<string, never>> {
   if (!sql) {
     sql = postgres(DATABASE_URL as string, {
       ssl: "require",
-      max: 1,
+      max: 3,
     });
   }
   return sql;
@@ -52,6 +52,9 @@ function ensureTable(): Promise<void> {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `.then(() => undefined);
+    ensurePromise.catch(() => {
+      ensurePromise = null;
+    });
   }
   return ensurePromise;
 }
@@ -75,6 +78,9 @@ function ensureHistoricalTable(): Promise<void> {
           ON historical_entries (messaged_at ASC)
       `;
     })();
+    ensureHistoricalPromise.catch(() => {
+      ensureHistoricalPromise = null;
+    });
   }
   return ensureHistoricalPromise;
 }
@@ -90,6 +96,9 @@ function ensureNotesTable(): Promise<void> {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `.then(() => undefined);
+    ensureNotesPromise.catch(() => {
+      ensureNotesPromise = null;
+    });
   }
   return ensureNotesPromise;
 }
@@ -105,6 +114,9 @@ function ensureStockTable(): Promise<void> {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
       )
     `.then(() => undefined);
+    ensureStockPromise.catch(() => {
+      ensureStockPromise = null;
+    });
   }
   return ensureStockPromise;
 }
@@ -302,16 +314,16 @@ export async function createEntry(input: {
 }): Promise<{ entry: Entry; position: number }> {
   if (isPostgres) {
     await ensureTable();
-    const rows = await getSql()<EntryRow[]>`
-      INSERT INTO entries (reddit_username, whatsapp, note)
-      VALUES (${input.redditUsername}, ${input.whatsapp}, ${input.note || null})
-      RETURNING id, reddit_username, whatsapp, note, status, created_at
+    const rows = await getSql()<(EntryRow & { position: number })[]>`
+      WITH inserted AS (
+        INSERT INTO entries (reddit_username, whatsapp, note)
+        VALUES (${input.redditUsername}, ${input.whatsapp}, ${input.note || null})
+        RETURNING id, reddit_username, whatsapp, note, status, created_at
+      )
+      SELECT inserted.*, (SELECT COUNT(*)::int FROM entries) + 1 AS position
+      FROM inserted
     `;
-    const entry = mapRow(rows[0]);
-    const countRows = await getSql()<{ count: number }[]>`
-      SELECT COUNT(*)::int AS count FROM entries
-    `;
-    return { entry, position: Number(countRows[0].count) };
+    return { entry: mapRow(rows[0]), position: Number(rows[0].position) };
   }
 
   const entries = await readJsonEntries();
@@ -337,30 +349,14 @@ export async function updateEntry(
 ): Promise<Entry | null> {
   if (isPostgres) {
     await ensureTable();
-    const existingRows = await getSql()<EntryRow[]>`
-      SELECT id, reddit_username, whatsapp, note, status, created_at
-      FROM entries
-      WHERE id = ${id}
-    `;
-    if (!existingRows[0]) return null;
-
-    const existing = mapRow(existingRows[0]);
-    const merged = {
-      redditUsername: patch.redditUsername ?? existing.redditUsername,
-      whatsapp: patch.whatsapp ?? existing.whatsapp,
-      note: patch.note !== undefined ? patch.note : existing.note,
-      status: patch.status ?? existing.status,
-      createdAt: patch.createdAt ?? existing.createdAt,
-    };
-
     const rows = await getSql()<EntryRow[]>`
       UPDATE entries
       SET
-        reddit_username = ${merged.redditUsername},
-        whatsapp = ${merged.whatsapp},
-        note = ${merged.note},
-        status = ${merged.status},
-        created_at = ${merged.createdAt}
+        reddit_username = COALESCE(${patch.redditUsername ?? null}, reddit_username),
+        whatsapp = COALESCE(${patch.whatsapp ?? null}, whatsapp),
+        note = CASE WHEN ${patch.note !== undefined}::boolean THEN ${patch.note ?? null} ELSE note END,
+        status = COALESCE(${patch.status ?? null}, status),
+        created_at = COALESCE(${patch.createdAt ?? null}::timestamptz, created_at)
       WHERE id = ${id}
       RETURNING id, reddit_username, whatsapp, note, status, created_at
     `;
@@ -457,16 +453,19 @@ export async function createHistoricalEntry(input: {
 }): Promise<{ entry: HistoricalEntry; position: number }> {
   if (isPostgres) {
     await ensureHistoricalTable();
-    const rows = await getSql()<HistoricalEntryRow[]>`
-      INSERT INTO historical_entries (reddit_username, whatsapp, messaged_at, note)
-      VALUES (${input.redditUsername}, ${input.whatsapp}, ${input.messagedAt}, ${input.note || null})
-      RETURNING id, reddit_username, whatsapp, messaged_at, note, status, created_at
+    const rows = await getSql()<(HistoricalEntryRow & { position: number })[]>`
+      WITH inserted AS (
+        INSERT INTO historical_entries (reddit_username, whatsapp, messaged_at, note)
+        VALUES (${input.redditUsername}, ${input.whatsapp}, ${input.messagedAt}, ${input.note || null})
+        RETURNING id, reddit_username, whatsapp, messaged_at, note, status, created_at
+      )
+      SELECT inserted.*, (SELECT COUNT(*)::int FROM historical_entries) + 1 AS position
+      FROM inserted
     `;
-    const entry = mapHistoricalRow(rows[0]);
-    const countRows = await getSql()<{ count: number }[]>`
-      SELECT COUNT(*)::int AS count FROM historical_entries
-    `;
-    return { entry, position: Number(countRows[0].count) };
+    return {
+      entry: mapHistoricalRow(rows[0]),
+      position: Number(rows[0].position),
+    };
   }
 
   const entries = await readJsonHistoricalEntries();
@@ -493,30 +492,14 @@ export async function updateHistoricalEntry(
 ): Promise<HistoricalEntry | null> {
   if (isPostgres) {
     await ensureHistoricalTable();
-    const existingRows = await getSql()<HistoricalEntryRow[]>`
-      SELECT id, reddit_username, whatsapp, messaged_at, note, status, created_at
-      FROM historical_entries
-      WHERE id = ${id}
-    `;
-    if (!existingRows[0]) return null;
-
-    const existing = mapHistoricalRow(existingRows[0]);
-    const merged = {
-      redditUsername: patch.redditUsername ?? existing.redditUsername,
-      whatsapp: patch.whatsapp ?? existing.whatsapp,
-      note: patch.note !== undefined ? patch.note : existing.note,
-      status: patch.status ?? existing.status,
-      messagedAt: patch.messagedAt ?? existing.messagedAt,
-    };
-
     const rows = await getSql()<HistoricalEntryRow[]>`
       UPDATE historical_entries
       SET
-        reddit_username = ${merged.redditUsername},
-        whatsapp = ${merged.whatsapp},
-        note = ${merged.note},
-        status = ${merged.status},
-        messaged_at = ${merged.messagedAt}
+        reddit_username = COALESCE(${patch.redditUsername ?? null}, reddit_username),
+        whatsapp = COALESCE(${patch.whatsapp ?? null}, whatsapp),
+        note = CASE WHEN ${patch.note !== undefined}::boolean THEN ${patch.note ?? null} ELSE note END,
+        status = COALESCE(${patch.status ?? null}, status),
+        messaged_at = COALESCE(${patch.messagedAt ?? null}::timestamptz, messaged_at)
       WHERE id = ${id}
       RETURNING id, reddit_username, whatsapp, messaged_at, note, status, created_at
     `;
@@ -632,6 +615,75 @@ export async function listCombinedEntries(): Promise<CombinedEntryWithPositions[
   ]);
 }
 
+interface CombinedMatchRow {
+  id: number;
+  source: QueueSource;
+  reddit_username: string;
+  whatsapp: string;
+  note: string | null;
+  status: EntryStatus;
+  created_at: Date | string;
+  messaged_at: Date | string | null;
+  position: number | string;
+  active_position: number | string | null;
+}
+
+/**
+ * Postgres-side equivalent of `listCombinedEntries()` followed by a filter:
+ * ranks the whole combined queue in SQL (same ordering as
+ * `rankCombinedEntries`) but only returns rows whose WhatsApp number ends in
+ * `last10` or whose Reddit username equals `username` (lower-cased, trimmed).
+ * Positions are therefore identical to the full listing.
+ */
+async function findCombinedMatches(match: {
+  last10: string;
+  username: string | null;
+}): Promise<CombinedEntryWithPositions[]> {
+  await Promise.all([ensureTable(), ensureHistoricalTable()]);
+  const rows = await getSql()<CombinedMatchRow[]>`
+    WITH combined AS (
+      SELECT id, 'regular'::text AS source, reddit_username, whatsapp, note,
+             status, created_at, NULL::timestamptz AS messaged_at,
+             created_at AS sort_at
+      FROM entries
+      UNION ALL
+      SELECT id, 'historical'::text, reddit_username, whatsapp, note,
+             status, created_at, messaged_at, messaged_at
+      FROM historical_entries
+    ),
+    ranked AS (
+      SELECT *,
+        ROW_NUMBER() OVER w AS position,
+        CASE WHEN status = ANY(${ACTIVE_STATUSES}::text[])
+          THEN COUNT(*) FILTER (WHERE status = ANY(${ACTIVE_STATUSES}::text[])) OVER w
+        END AS active_position
+      FROM combined
+      WINDOW w AS (ORDER BY sort_at ASC, source ASC, created_at ASC, id ASC)
+    )
+    SELECT id, source, reddit_username, whatsapp, note, status, created_at,
+           messaged_at, position, active_position
+    FROM ranked
+    WHERE (CASE WHEN length(whatsapp) > 10 THEN right(whatsapp, 10) ELSE whatsapp END) = ${match.last10}
+       OR whatsapp = ${match.last10}
+       OR lower(btrim(reddit_username)) = ${match.username}
+    ORDER BY position
+  `;
+
+  return rows.map((row) => ({
+    id: row.id,
+    source: row.source,
+    redditUsername: row.reddit_username,
+    whatsapp: row.whatsapp,
+    note: row.note,
+    status: row.status,
+    createdAt: toIso(row.created_at),
+    messagedAt: row.messaged_at ? toIso(row.messaged_at) : null,
+    position: Number(row.position),
+    activePosition:
+      row.active_position === null ? null : Number(row.active_position),
+  }));
+}
+
 /**
  * Finds everyone whose stored WhatsApp number matches the given
  * already-normalised number. Matching is forgiving: people can type just the
@@ -641,8 +693,12 @@ export async function listCombinedEntries(): Promise<CombinedEntryWithPositions[
 export async function findCombinedEntriesByWhatsApp(
   whatsapp: string,
 ): Promise<CombinedEntryWithPositions[]> {
-  const entries = await listCombinedEntries();
   const last10 = lastTenDigits(whatsapp);
+  if (isPostgres) {
+    return findCombinedMatches({ last10, username: null });
+  }
+
+  const entries = await listCombinedEntries();
 
   return entries.filter(
     (entry) =>
@@ -674,9 +730,11 @@ export async function findDuplicateEntries(input: {
   redditUsername: string;
   whatsapp: string;
 }): Promise<DuplicateEntryMatch[]> {
-  const entries = await listCombinedEntries();
   const username = input.redditUsername.trim().toLowerCase();
   const last10 = lastTenDigits(input.whatsapp);
+  const entries = isPostgres
+    ? await findCombinedMatches({ last10, username })
+    : await listCombinedEntries();
 
   return entries.flatMap((entry) => {
     const matchedOn: DuplicateMatchField[] = [];

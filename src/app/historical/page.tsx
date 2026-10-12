@@ -11,10 +11,7 @@ export const metadata: Metadata = {
 export default function HistoricalPage() {
   return (
     <main className="relative flex-1 overflow-hidden px-4 py-10 sm:py-16">
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10">
-        <div className="animate-glow-pulse absolute -top-24 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-accent/20 blur-[120px]" />
-        <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-emerald-500/10 blur-[100px]" />
-      </div>
+      <div aria-hidden="true" className="ambient-glow pointer-events-none fixed inset-0 -z-10" />
 
       <div className="mx-auto w-full max-w-md">
         <Link

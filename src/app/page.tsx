@@ -11,17 +11,13 @@ export default function Home() {
 
   return (
     <main className="relative flex-1 overflow-hidden px-4 py-10 sm:py-16">
-      {/* Ambient background glows */}
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10">
-        <div className="animate-glow-pulse absolute -top-24 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-accent/20 blur-[120px]" />
-        <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-emerald-500/10 blur-[100px]" />
-        <div className="absolute left-0 top-1/3 h-64 w-64 rounded-full bg-sky-500/10 blur-[100px]" />
-      </div>
+      {/* Ambient background glows (static gradients: no blur filter to repaint) */}
+      <div aria-hidden="true" className="ambient-glow pointer-events-none fixed inset-0 -z-10" />
 
       <div className="mx-auto w-full max-w-3xl">
         {/* Hero product image */}
-        <div className="animate-fade-up delay-1 mb-8">
-          <div className="animate-float-slow relative mx-auto aspect-square max-w-md overflow-hidden rounded-3xl border border-border/80 shadow-[0_0_80px_rgba(59,130,246,0.12)]">
+        <div className="mb-8">
+          <div className="relative mx-auto aspect-square max-w-md overflow-hidden rounded-3xl border border-border/80 shadow-[0_0_80px_rgba(59,130,246,0.12)]">
             <Image
               src="/images/hero.jpg"
               alt="Amazfit Helio Strap wearable"
@@ -38,7 +34,7 @@ export default function Home() {
         </div>
 
         {/* Headline */}
-        <div className="animate-fade-up delay-2 mb-8 text-center">
+        <div className="mb-8 text-center">
           <p className="font-mono text-xs uppercase tracking-[0.35em] text-accent">
             Next drop waitlist
           </p>
