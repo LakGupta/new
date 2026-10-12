@@ -68,10 +68,7 @@ export default function DuplicateNotice({
     >
       <div className="mb-6 h-1 w-14 rounded-full bg-amber-400" />
 
-      <p className="font-mono text-xs uppercase tracking-[0.3em] text-amber-300">
-        Already in the queue
-      </p>
-      <h2 className="mt-3 text-2xl font-semibold text-foreground">
+      <h2 className="text-2xl font-semibold tracking-tight text-foreground">
         You already have a place
       </h2>
       <p className="mt-3 text-sm leading-6 text-amber-100/80">
@@ -131,7 +128,7 @@ function DuplicateEntryCard({
     <div className="rounded-2xl border border-amber-400/20 bg-background/70 p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+          <p className="text-xs font-medium tracking-wide text-muted-foreground">
             {isActive ? "Your current position" : "Queue status"}
           </p>
           <p className="mt-2 text-4xl font-bold tracking-tight text-accent">

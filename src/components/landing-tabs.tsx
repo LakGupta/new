@@ -59,10 +59,7 @@ export default function LandingTabs({
                   : "border-border bg-card text-muted-foreground hover:border-accent/40 hover:text-foreground"
               }`}
             >
-              <span className="block font-mono text-[10px] uppercase tracking-[0.25em] opacity-70">
-                0{TABS.findIndex((item) => item.id === tab.id) + 1}
-              </span>
-              <span className="mt-1 block text-sm font-semibold">
+              <span className="block text-sm font-semibold">
                 {tab.label}
               </span>
             </button>

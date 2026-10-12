@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { PRODUCT_PRICE } from "@/lib/product";
 
 export default function ProductDetails() {
   const [open, setOpen] = useState(false);
 
   const rows = [
-    { label: "Price", value: "₹12,600" },
+    { label: "Price", value: PRODUCT_PRICE },
     { label: "Shipping", value: "PAN India · complimentary" },
     { label: "Face-to-face", value: "Available in Bangalore" },
     { label: "COD", value: "Not available" },
@@ -50,7 +51,7 @@ export default function ProductDetails() {
                   <span className="text-sm text-muted-foreground">
                     {row.label}
                   </span>
-                  <span className="text-right text-sm font-semibold text-foreground">
+                  <span className="text-right text-sm font-semibold tabular-nums text-foreground">
                     {row.value}
                   </span>
                 </div>

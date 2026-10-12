@@ -23,13 +23,10 @@ export default function HistoricalPage() {
         </Link>
 
         <div className="animate-fade-up delay-2 mt-6 text-center">
-          <p className="font-mono text-xs uppercase tracking-[0.35em] text-accent">
-            Historical queue
-          </p>
-          <h1 className="mt-3 text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+          <h1 className="text-balance text-[clamp(2.25rem,8vw,3.5rem)] font-bold leading-[1.05] tracking-[-0.035em]">
             Already messaged us?
           </h1>
-          <p className="mx-auto mt-4 max-w-sm text-base leading-7 text-muted-foreground">
+          <p className="mx-auto mt-4 max-w-md text-pretty text-base leading-7 text-muted-foreground">
             If you messaged us before this waitlist existed, fill this form with
             your Reddit username, WhatsApp, and the exact date &amp; time you
             messaged. Your queue position will be based on that time.
@@ -40,7 +37,7 @@ export default function HistoricalPage() {
           <HistoricalJoinForm />
         </div>
 
-        <p className="animate-fade-up delay-4 mt-8 text-center font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground/70">
+        <p className="animate-fade-up delay-4 mt-8 text-center text-xs leading-5 text-muted-foreground">
           First come, first served · sorted by when you messaged
         </p>
       </div>

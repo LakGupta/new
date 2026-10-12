@@ -78,10 +78,7 @@ export default function JoinForm({
   if (submitted) {
     return (
       <div className="animate-pop-in rounded-2xl border border-border bg-card p-8 text-center shadow-[0_0_60px_rgba(59,130,246,0.10)]">
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">
-          You&apos;re in the queue
-        </p>
-        <h2 className="mt-5 text-2xl font-semibold text-foreground">
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
           See you at the next drop
         </h2>
         <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted-foreground">

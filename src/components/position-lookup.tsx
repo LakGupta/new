@@ -136,7 +136,7 @@ export default function PositionLookup({
         <div className="mt-6 space-y-3 border-t border-border pt-6">
           {results.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border py-10 text-center">
-              <p className="font-mono text-xs uppercase tracking-[0.25em] text-muted-foreground">
+              <p className="text-base font-semibold text-foreground">
                 No match found
               </p>
               <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
@@ -146,7 +146,7 @@ export default function PositionLookup({
             </div>
           ) : (
             <>
-              <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground">
                 {results.length === 1 ? "1 result found" : `${results.length} results found`}
               </p>
               <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs leading-5 text-muted-foreground">
@@ -181,10 +181,10 @@ function PositionResultCard({
     <div className="animate-pop-in rounded-2xl border border-accent/30 bg-background p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">
+          <p className="text-sm font-medium text-muted-foreground">
             {isActive ? "Your queue position" : "Queue status"}
           </p>
-          <p className="mt-2 text-5xl font-bold tracking-tight text-accent">
+          <p className="mt-2 text-5xl font-bold tabular-nums tracking-[-0.03em] text-accent">
             {shownPosition ? (
               `#${shownPosition}`
             ) : (
@@ -228,7 +228,7 @@ function PositionResultCard({
 
       {entry.note ? (
         <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-500/10 px-4 py-3">
-          <p className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.25em] text-amber-300">
+          <p className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-amber-300">
             <NoteIcon />
             Your note
           </p>

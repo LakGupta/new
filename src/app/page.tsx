@@ -3,6 +3,7 @@ import Link from "next/link";
 import LandingTabs from "@/components/landing-tabs";
 import ProductDetails from "@/components/product-details";
 import QueueExplainer from "@/components/queue-explainer";
+import { PRODUCT_PRICE } from "@/lib/product";
 
 export default function Home() {
   const whatsappGroupUrl =
@@ -27,7 +28,7 @@ export default function Home() {
               className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-            <span className="absolute bottom-3 left-3 rounded-full border border-white/15 bg-black/50 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-white/90 backdrop-blur">
+            <span className="absolute bottom-3 left-3 rounded-full border border-white/15 bg-black/50 px-3 py-1 text-xs font-medium tracking-wide text-white/90 backdrop-blur">
               Official Amazfit
             </span>
           </div>
@@ -35,15 +36,20 @@ export default function Home() {
 
         {/* Headline */}
         <div className="mb-8 text-center">
-          <p className="font-mono text-xs uppercase tracking-[0.35em] text-accent">
-            Next drop waitlist
-          </p>
-          <h1 className="mt-3 text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+          <h1 className="text-balance text-[clamp(2.5rem,9vw,4rem)] font-bold leading-[1.05] tracking-[-0.035em]">
             Amazfit Helio Strap
           </h1>
-          <p className="mx-auto mt-4 max-w-sm text-base leading-7 text-muted-foreground">
+          <p className="mx-auto mt-4 max-w-md text-balance text-lg leading-7 text-muted-foreground">
             Demand is high and stock is limited. Read the details below, then
             join the queue to secure your place.
+          </p>
+          <p className="mt-6 flex flex-wrap items-baseline justify-center gap-x-3 gap-y-1">
+            <span className="text-3xl font-semibold tabular-nums tracking-tight text-foreground">
+              {PRODUCT_PRICE}
+            </span>
+            <span className="text-sm text-muted-foreground">
+              Free shipping across India · Prepaid only
+            </span>
           </p>
         </div>
 
@@ -54,25 +60,25 @@ export default function Home() {
 
         {/* Queue promise */}
         <section className="animate-fade-up delay-4 mt-4 rounded-2xl border border-border/80 bg-card/60 p-5 sm:p-6">
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-accent">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
             First come, first served
-          </p>
+          </h2>
           <ul className="mt-4 space-y-3">
             <li className="flex gap-3">
-              <span className="font-mono text-sm font-bold text-accent">01</span>
+              <span className="w-5 shrink-0 text-sm font-semibold tabular-nums text-accent">01</span>
               <p className="text-sm leading-6 text-muted-foreground">
                 Join the queue with your Reddit username and WhatsApp number.
               </p>
             </li>
             <li className="flex gap-3">
-              <span className="font-mono text-sm font-bold text-accent">02</span>
+              <span className="w-5 shrink-0 text-sm font-semibold tabular-nums text-accent">02</span>
               <p className="text-sm leading-6 text-muted-foreground">
                 When stock arrives, we message people one by one in the order they
                 joined.
               </p>
             </li>
             <li className="flex gap-3">
-              <span className="font-mono text-sm font-bold text-accent">03</span>
+              <span className="w-5 shrink-0 text-sm font-semibold tabular-nums text-accent">03</span>
               <p className="text-sm leading-6 text-muted-foreground">
                 If someone doesn&apos;t reply, we move to the next person. Earlier you
                 join, earlier your turn.
@@ -92,7 +98,7 @@ export default function Home() {
           href="#join-form"
           className="animate-fade-up delay-5 group mx-auto mt-8 flex w-max cursor-pointer flex-col items-center gap-2 text-muted-foreground transition hover:text-accent"
         >
-          <span className="font-mono text-[11px] uppercase tracking-[0.25em]">
+          <span className="text-sm font-medium">
             Join the queue below
           </span>
           <span className="animate-bounce-soft flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card text-accent shadow-[0_0_24px_rgba(59,130,246,0.10)] transition group-hover:border-accent/50 group-hover:bg-accent/10">
@@ -109,13 +115,10 @@ export default function Home() {
         {whatsappGroupUrl ? (
           <section className="animate-fade-up delay-7 mt-6">
             <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-5 sm:p-6">
-              <p className="font-mono text-xs uppercase tracking-[0.3em] text-emerald-300">
-                Stock updates
-              </p>
-              <p className="mt-2 text-lg font-semibold text-emerald-100">
+              <h2 className="text-xl font-semibold tracking-tight text-emerald-100">
                 Join our WhatsApp group
-              </p>
-              <p className="mt-1 text-sm leading-6 text-emerald-200/70">
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-emerald-200/80">
                 Get notified before the queue opens and when new stock arrives.
               </p>
               <a
@@ -133,9 +136,9 @@ export default function Home() {
 
         {/* Product gallery */}
         <section className="animate-fade-up delay-6 mt-10">
-          <p className="mb-3 text-center font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">
+          <h2 className="mb-3 text-center text-sm font-medium text-muted-foreground">
             In action
-          </p>
+          </h2>
           <div className="grid grid-cols-3 gap-3">
             {[
               {
@@ -167,7 +170,7 @@ export default function Home() {
           </div>
         </section>
 
-        <p className="mt-8 text-center font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground/70">
+        <p className="mt-8 text-center text-xs leading-5 text-muted-foreground">
           First come, first served · historical + website entries share one
           queue order
         </p>
