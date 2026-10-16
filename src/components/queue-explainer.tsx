@@ -6,19 +6,20 @@ export default function QueueExplainer() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="mt-5 border-t border-border pt-4">
+    <div className="rounded-[10px] border border-line bg-background p-5 sm:p-6">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-controls="queue-explainer"
-        className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-sm font-semibold text-accent shadow-[0_0_0_rgba(59,130,246,0)] transition-all duration-300 hover:border-accent/60 hover:bg-accent/20 hover:shadow-[0_0_24px_rgba(59,130,246,0.25)] active:scale-[0.98]"
+        className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 text-left font-semibold text-foreground transition-colors duration-[120ms] hover:text-charge"
       >
-        <span className="transition-transform duration-300 group-hover:-translate-y-0.5">
-          What queue?
+        <span>
+          <span className="label-mono block">Example</span>
+          What does &ldquo;position&rdquo; mean?
         </span>
         <span
-          className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/20 text-accent transition-transform duration-500 ${
+          className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] border border-line text-charge transition-transform duration-500 ${
             open ? "rotate-45" : ""
           }`}
         >
@@ -42,14 +43,14 @@ export default function QueueExplainer() {
               , not when we reply.
             </p>
 
-            <div className="mt-3 space-y-1.5 rounded-xl border border-border bg-background p-3 font-mono text-xs">
+            <div className="mt-3 space-y-1.5 rounded-[8px] border border-line bg-surface p-3 font-mono text-xs">
               <p className="flex items-center justify-between gap-3">
                 <span>Person A · showed interest on 20 Aug</span>
-                <span className="font-bold text-accent">#1</span>
+                <span className="font-bold text-charge">#1</span>
               </p>
               <p className="flex items-center justify-between gap-3">
                 <span>Person B · showed interest on 22 Aug</span>
-                <span className="font-bold text-accent">#2</span>
+                <span className="font-bold text-charge">#2</span>
               </p>
             </div>
 

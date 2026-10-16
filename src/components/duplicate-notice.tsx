@@ -64,14 +64,12 @@ export default function DuplicateNotice({
     <div
       role="alert"
       aria-live="polite"
-      className="animate-pop-in rounded-2xl border border-amber-400/30 bg-amber-500/10 p-5 shadow-[0_0_60px_rgba(251,191,36,0.08)] sm:p-7"
+      className="animate-pop-in rounded-[10px] border border-signal/30 bg-surface p-5 sm:p-7"
     >
-      <div className="mb-6 h-1 w-14 rounded-full bg-amber-400" />
-
-      <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+      <h2 className="font-display text-2xl font-bold tracking-[-0.03em] text-foreground">
         You already have a place
       </h2>
-      <p className="mt-3 text-sm leading-6 text-amber-100/80">
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">
         {reason} No new entry was created — adding it again would put the same
         person in line twice.
       </p>
@@ -90,20 +88,20 @@ export default function DuplicateNotice({
         <button
           type="button"
           onClick={() => onCheckPosition(whatsapp)}
-          className="mt-6 w-full cursor-pointer rounded-xl bg-accent py-3.5 text-base font-semibold text-accent-foreground transition hover:bg-blue-400 active:scale-[0.99]"
+          className="mt-6 btn-charge w-full py-3.5 text-base"
         >
           Check my live position
         </button>
       ) : (
         <Link
           href="/#join-form"
-          className="mt-6 flex w-full items-center justify-center rounded-xl border border-border bg-card px-4 py-3 text-base font-semibold text-foreground transition hover:border-accent/50 hover:text-accent"
+          className="mt-6 btn-ghost w-full px-4 text-base"
         >
           Check it on the main page
         </Link>
       )}
 
-      <p className="mt-4 text-center text-xs leading-5 text-amber-200/70">
+      <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">
         Details wrong, or you were skipped and want back in? Message us and
         we&apos;ll fix your entry.
       </p>
@@ -125,13 +123,13 @@ function DuplicateEntryCard({
     entry.source === "historical" ? entry.messagedAt : entry.createdAt;
 
   return (
-    <div className="rounded-2xl border border-amber-400/20 bg-background/70 p-5">
+    <div className="rounded-[10px] border border-line bg-background p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs font-medium tracking-wide text-muted-foreground">
             {isActive ? "Your current position" : "Queue status"}
           </p>
-          <p className="mt-2 text-4xl font-bold tracking-tight text-accent">
+          <p className="mt-2 font-display text-4xl font-bold tabular-nums tracking-[-0.04em] text-charge">
             {shownPosition ? (
               `#${shownPosition}`
             ) : (
@@ -152,7 +150,7 @@ function DuplicateEntryCard({
             ].toLowerCase()}).`}
       </p>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-[8px] border border-line bg-surface px-4 py-3 text-sm">
         <p className="font-semibold text-foreground">
           u/{entry.redditUsername}
         </p>
@@ -165,7 +163,7 @@ function DuplicateEntryCard({
         {entry.source === "historical" ? "Historical entry" : "Website entry"} ·{" "}
         {timeLabel} {timeValue ? formatDate(timeValue) : "—"}
       </p>
-      <p className="mt-2 text-xs leading-5 text-amber-200/80">
+      <p className="mt-2 text-xs leading-5 text-signal">
         {matchedOnText(matchedOn)}
       </p>
     </div>

@@ -1,7 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import SubmitButton from "@/components/forms/submit-button";
 import DuplicateNotice from "@/components/duplicate-notice";
+import Confetti, { centerOf } from "@/components/forms/confetti";
+import FieldError from "@/components/forms/field-error";
+import { redditUsernameError, whatsappError } from "@/components/forms/field-rules";
 import type { DuplicateEntryMatch } from "@/lib/types";
 
 function pad(value: number): string {
@@ -20,6 +24,17 @@ export default function HistoricalJoinForm() {
   const [duplicates, setDuplicates] = useState<DuplicateEntryMatch[] | null>(
     null,
   );
+  // Inline errors show once a field is left, or for every field after a submit.
+  const [touched, setTouched] = useState({ reddit: false, whatsapp: false, when: false });
+  const [confettiOrigin, setConfettiOrigin] = useState<{ x: number; y: number } | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const redditError = touched.reddit ? redditUsernameError(redditUsername) : null;
+  const phoneError = touched.whatsapp ? whatsappError(whatsapp) : null;
+  const whenError =
+    touched.when && (!monthValue || !dayValue || !timeValue)
+      ? "Select the exact date and time you messaged us."
+      : null;
 
   const monthOptions = useMemo(() => {
     const options: { value: string; label: string }[] = [];
@@ -69,8 +84,17 @@ export default function HistoricalJoinForm() {
     setError(null);
     setDuplicates(null);
 
+    setTouched({ reddit: true, whatsapp: true, when: true });
+    if (redditUsernameError(redditUsername)) {
+      document.getElementById("historical-reddit")?.focus();
+      return;
+    }
+    if (whatsappError(whatsapp)) {
+      document.getElementById("historical-whatsapp")?.focus();
+      return;
+    }
     if (!monthValue || !dayValue || !timeValue) {
-      setError("Select the exact date and time you messaged us.");
+      document.getElementById("historical-month")?.focus();
       return;
     }
 
@@ -104,6 +128,9 @@ export default function HistoricalJoinForm() {
         throw new Error(data.error || "Something went wrong. Please try again.");
       }
 
+      setConfettiOrigin(
+        centerOf(formRef.current?.querySelector<HTMLElement>('button[type="submit"]') ?? null),
+      );
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -117,27 +144,32 @@ export default function HistoricalJoinForm() {
   }
 
   if (submitted) {
+    // Confetti sits outside the pop-in: a transformed parent would offset its
+    // fixed positioning.
     return (
-      <div className="animate-pop-in rounded-2xl border border-border bg-card p-8 text-center shadow-[0_0_60px_rgba(59,130,246,0.10)]">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-          You&apos;re on the list
-        </h2>
-        <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
-          We&apos;ll verify the date &amp; time you gave us, then contact you in
-          the order of your original message when stock arrives.
-        </p>
-      </div>
+      <>
+        <Confetti origin={confettiOrigin} />
+        <div className="animate-pop-in rounded-[10px] border border-charge/50 bg-background p-8 text-center">
+          <p className="label-mono text-charge">You&apos;re in</p>
+          <h2 className="mt-3 font-display text-2xl font-bold tracking-[-0.03em] text-foreground">
+            You&apos;re on the list
+          </h2>
+          <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
+            We&apos;ll verify the date &amp; time you gave us, then contact you in
+            the order of your original message when stock arrives.
+          </p>
+        </div>
+      </>
     );
   }
 
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-border bg-card p-5 shadow-[0_0_60px_rgba(59,130,246,0.08)] sm:p-7"
+      className="rounded-[10px] border border-line bg-background p-5 sm:p-7"
       noValidate
     >
-      <div className="mb-6 h-1 w-14 rounded-full bg-accent" />
-
       <div className="space-y-5">
         <div>
           <label
@@ -155,12 +187,19 @@ export default function HistoricalJoinForm() {
             maxLength={50}
             value={redditUsername}
             onChange={(e) => setRedditUsername(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, reddit: true }))}
+            aria-invalid={redditError ? true : undefined}
+            aria-describedby={redditError ? "historical-reddit-error" : "historical-reddit-hint"}
             placeholder="u/yourname"
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
+            className="field"
           />
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            u/ is optional. Just your username is fine.
-          </p>
+          {redditError ? (
+            <FieldError id="historical-reddit-error" message={redditError} />
+          ) : (
+            <p id="historical-reddit-hint" className="mt-1.5 text-xs text-muted-foreground">
+              u/ is optional. Just your username is fine.
+            </p>
+          )}
         </div>
 
         <div>
@@ -180,9 +219,13 @@ export default function HistoricalJoinForm() {
             maxLength={20}
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, whatsapp: true }))}
+            aria-invalid={phoneError ? true : undefined}
+            aria-describedby={phoneError ? "historical-whatsapp-error" : undefined}
             placeholder="98765 43210"
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
+            className="field font-mono"
           />
+          <FieldError id="historical-whatsapp-error" message={phoneError} />
         </div>
 
         <div>
@@ -206,7 +249,7 @@ export default function HistoricalJoinForm() {
                   setMonthValue(e.target.value);
                   setDayValue("");
                 }}
-                className="w-full cursor-pointer rounded-xl border border-border bg-background px-3 py-3 text-base text-foreground focus:border-accent"
+                className="field cursor-pointer px-3"
               >
                 <option value="">Select month</option>
                 {monthOptions.map((month) => (
@@ -230,7 +273,7 @@ export default function HistoricalJoinForm() {
                 value={dayValue}
                 onChange={(e) => setDayValue(e.target.value)}
                 disabled={!monthValue}
-                className="w-full cursor-pointer rounded-xl border border-border bg-background px-3 py-3 text-base text-foreground focus:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+                className="field cursor-pointer px-3 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="">Select day</option>
                 {dayOptions.map((day) => (
@@ -253,7 +296,7 @@ export default function HistoricalJoinForm() {
                 required
                 value={timeValue}
                 onChange={(e) => setTimeValue(e.target.value)}
-                className="w-full cursor-pointer rounded-xl border border-border bg-background px-3 py-3 text-base text-foreground focus:border-accent"
+                className="field cursor-pointer px-3"
               >
                 <option value="">Select time</option>
                 {timeOptions.map((time) => (
@@ -264,7 +307,8 @@ export default function HistoricalJoinForm() {
               </select>
             </div>
           </div>
-          <p className="mt-2 rounded-lg border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-xs leading-5 text-amber-200/80">
+          <FieldError id="historical-when-error" message={whenError} />
+          <p className="mt-2 rounded-[6px] border border-line bg-surface px-3 py-2 text-xs leading-5 text-muted-foreground">
             The exact date &amp; time you provide will be verified before your
             queue position is confirmed.
           </p>
@@ -273,30 +317,15 @@ export default function HistoricalJoinForm() {
         {error ? (
           <div
             role="alert"
-            className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            className="rounded-[8px] border border-warn/40 bg-warn/10 px-4 py-3 text-sm text-warn"
           >
             {error}
           </div>
         ) : null}
 
-        {submitting ? (
-          <div
-            role="progressbar"
-            aria-label="Submitting historical queue entry"
-            aria-valuetext="Processing"
-            className="h-1.5 w-full overflow-hidden rounded-full bg-accent/20"
-          >
-            <div className="loading-bar-indeterminate h-full w-1/3 rounded-full bg-accent" />
-          </div>
-        ) : null}
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full cursor-pointer rounded-xl bg-accent py-3.5 text-base font-semibold text-accent-foreground transition hover:bg-blue-400 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {submitting ? "Submitting…" : "Submit my place"}
-        </button>
+        <SubmitButton busy={submitting} busyLabel="Submitting historical queue entry">
+          Submit my place
+        </SubmitButton>
 
         <p className="text-center text-xs leading-5 text-muted-foreground">
           This is only for people who messaged us before the waitlist webapp

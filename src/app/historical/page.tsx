@@ -10,20 +10,20 @@ export const metadata: Metadata = {
 
 export default function HistoricalPage() {
   return (
-    <main className="relative flex-1 overflow-hidden px-4 py-10 sm:py-16">
-      <div aria-hidden="true" className="ambient-glow pointer-events-none fixed inset-0 -z-10" />
+    <main className="grain relative flex-1 overflow-x-clip px-4 py-10 sm:py-16">
 
       <div className="mx-auto w-full max-w-md">
         <Link
           href="/"
-          className="animate-fade-up delay-1 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-accent"
+          className="animate-fade-up delay-1 inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground transition-colors duration-[120ms] hover:text-charge"
         >
           <BackIcon />
           Back to new queue
         </Link>
 
         <div className="animate-fade-up delay-2 mt-6 text-center">
-          <h1 className="text-balance text-[clamp(2.25rem,8vw,3.5rem)] font-bold leading-[1.05] tracking-[-0.035em]">
+          <p className="label-mono text-charge">Historical queue</p>
+          <h1 className="mt-3 text-balance font-display text-[clamp(2rem,8vw,3rem)] font-bold leading-[1.05] tracking-[-0.04em]">
             Already messaged us?
           </h1>
           <p className="mx-auto mt-4 max-w-md text-pretty text-base leading-7 text-muted-foreground">

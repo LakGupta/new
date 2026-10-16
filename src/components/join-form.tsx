@@ -1,7 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import DuplicateNotice from "@/components/duplicate-notice";
+import Confetti, { centerOf } from "@/components/forms/confetti";
+import FieldError from "@/components/forms/field-error";
+import { redditUsernameError, whatsappError } from "@/components/forms/field-rules";
+import SubmitButton from "@/components/forms/submit-button";
 import type { DuplicateEntryMatch } from "@/lib/types";
 
 interface JoinFormProps {
@@ -23,9 +27,29 @@ export default function JoinForm({
   const [duplicates, setDuplicates] = useState<DuplicateEntryMatch[] | null>(
     null,
   );
+  // Inline errors show once a field is left, or for every field after a submit.
+  const [touched, setTouched] = useState({ reddit: false, whatsapp: false });
+  const [confettiOrigin, setConfettiOrigin] = useState<{ x: number; y: number } | null>(null);
+  const submitRef = useRef<HTMLButtonElement>(null);
+  const redditRef = useRef<HTMLInputElement>(null);
+  const whatsappRef = useRef<HTMLInputElement>(null);
+
+  const redditError = touched.reddit ? redditUsernameError(redditUsername) : null;
+  const phoneError = touched.whatsapp ? whatsappError(whatsapp) : null;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    setTouched({ reddit: true, whatsapp: true });
+    if (redditUsernameError(redditUsername)) {
+      redditRef.current?.focus();
+      return;
+    }
+    if (whatsappError(whatsapp)) {
+      whatsappRef.current?.focus();
+      return;
+    }
+
     setError(null);
     setDuplicates(null);
     setSubmitting(true);
@@ -57,6 +81,7 @@ export default function JoinForm({
         throw new Error(data.error || "Something went wrong. Please try again.");
       }
 
+      setConfettiOrigin(centerOf(submitRef.current));
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -76,28 +101,32 @@ export default function JoinForm({
   }
 
   if (submitted) {
+    // Confetti sits outside the pop-in: a transformed parent would offset its
+    // fixed positioning.
     return (
-      <div className="animate-pop-in rounded-2xl border border-border bg-card p-8 text-center shadow-[0_0_60px_rgba(59,130,246,0.10)]">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-          See you at the next drop
-        </h2>
-        <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
-          We&apos;ll message you on WhatsApp in queue order when the {queueName}{" "}
-          straps arrive. You can check your current position anytime using the
-          Check position tab above.
-        </p>
-      </div>
+      <>
+        <Confetti origin={confettiOrigin} />
+        <div className="animate-pop-in rounded-[10px] border border-charge/50 bg-background p-8 text-center">
+          <p className="label-mono text-charge">You&apos;re in</p>
+          <h2 className="mt-3 font-display text-2xl font-bold tracking-[-0.03em] text-foreground">
+            See you at the next drop
+          </h2>
+          <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted-foreground">
+            We&apos;ll message you on WhatsApp in queue order when the {queueName}{" "}
+            straps arrive. You can check your current position anytime using the
+            Check position tab above.
+          </p>
+        </div>
+      </>
     );
   }
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-border bg-card p-5 shadow-[0_0_60px_rgba(59,130,246,0.08)] sm:p-7"
+      className="rounded-[10px] border border-line bg-background p-5 sm:p-7"
       noValidate
     >
-      <div className="mb-6 h-1 w-14 rounded-full bg-accent" />
-
       <div className="space-y-5">
         <div>
           <label
@@ -107,6 +136,7 @@ export default function JoinForm({
             Reddit username
           </label>
           <input
+            ref={redditRef}
             id="reddit-username"
             name="redditUsername"
             type="text"
@@ -115,12 +145,19 @@ export default function JoinForm({
             maxLength={50}
             value={redditUsername}
             onChange={(e) => setRedditUsername(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, reddit: true }))}
+            aria-invalid={redditError ? true : undefined}
+            aria-describedby={redditError ? "reddit-username-error" : "reddit-username-hint"}
             placeholder="u/yourname"
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
+            className="field"
           />
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            u/ is optional. Just your username is fine.
-          </p>
+          {redditError ? (
+            <FieldError id="reddit-username-error" message={redditError} />
+          ) : (
+            <p id="reddit-username-hint" className="mt-1.5 text-xs text-muted-foreground">
+              u/ is optional. Just your username is fine.
+            </p>
+          )}
         </div>
 
         <div>
@@ -131,6 +168,7 @@ export default function JoinForm({
             WhatsApp number
           </label>
           <input
+            ref={whatsappRef}
             id="whatsapp"
             name="whatsapp"
             type="tel"
@@ -140,9 +178,13 @@ export default function JoinForm({
             maxLength={20}
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, whatsapp: true }))}
+            aria-invalid={phoneError ? true : undefined}
+            aria-describedby={phoneError ? "whatsapp-error" : undefined}
             placeholder="98765 43210"
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
+            className="field font-mono"
           />
+          <FieldError id="whatsapp-error" message={phoneError} />
         </div>
 
         <div>
@@ -160,37 +202,22 @@ export default function JoinForm({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Something you may want us to know"
-            className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
+            className="field resize-none"
           />
         </div>
 
         {error ? (
           <div
             role="alert"
-            className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            className="rounded-[8px] border border-warn/40 bg-warn/10 px-4 py-3 text-sm text-warn"
           >
             {error}
           </div>
         ) : null}
 
-        {submitting ? (
-          <div
-            role="progressbar"
-            aria-label="Joining the queue"
-            aria-valuetext="Processing"
-            className="h-1.5 w-full overflow-hidden rounded-full bg-accent/20"
-          >
-            <div className="loading-bar-indeterminate h-full w-1/3 rounded-full bg-accent" />
-          </div>
-        ) : null}
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full cursor-pointer rounded-xl bg-accent py-3.5 text-base font-semibold text-accent-foreground transition hover:bg-blue-400 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {submitting ? "Joining queue…" : "Join the queue"}
-        </button>
+        <SubmitButton ref={submitRef} busy={submitting} busyLabel="Joining the queue">
+          Join the queue
+        </SubmitButton>
 
         <p className="text-center text-xs leading-5 text-muted-foreground">
           First come, first served. We reply in queue order when stock arrives.

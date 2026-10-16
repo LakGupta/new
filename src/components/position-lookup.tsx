@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import SubmitButton from "@/components/forms/submit-button";
 import {
   ACTIVE_STATUSES,
   STATUS_COLORS,
@@ -71,11 +72,9 @@ export default function PositionLookup({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-border bg-card p-5 shadow-[0_0_60px_rgba(59,130,246,0.08)] sm:p-7"
+      className="rounded-[10px] border border-line bg-background p-5 sm:p-7"
       noValidate
     >
-      <div className="mb-6 h-1 w-14 rounded-full bg-accent" />
-
       <div className="space-y-5">
         <div>
           <label
@@ -95,7 +94,7 @@ export default function PositionLookup({
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
             placeholder="98765 43210"
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
+            className="field font-mono"
           />
           <p className="mt-1.5 text-xs text-muted-foreground">
             No +91 needed — just type your 10-digit WhatsApp number exactly as
@@ -106,36 +105,21 @@ export default function PositionLookup({
         {error ? (
           <div
             role="alert"
-            className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            className="rounded-[8px] border border-warn/40 bg-warn/10 px-4 py-3 text-sm text-warn"
           >
             {error}
           </div>
         ) : null}
 
-        {checking ? (
-          <div
-            role="progressbar"
-            aria-label="Checking queue position"
-            aria-valuetext="Processing"
-            className="h-1.5 w-full overflow-hidden rounded-full bg-accent/20"
-          >
-            <div className="loading-bar-indeterminate h-full w-1/3 rounded-full bg-accent" />
-          </div>
-        ) : null}
-
-        <button
-          type="submit"
-          disabled={checking}
-          className="w-full cursor-pointer rounded-xl bg-accent py-3.5 text-base font-semibold text-accent-foreground transition hover:bg-blue-400 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {checking ? "Checking…" : "Check my position"}
-        </button>
+        <SubmitButton busy={checking} busyLabel="Checking queue position">
+          Check my position
+        </SubmitButton>
       </div>
 
       {results ? (
-        <div className="mt-6 space-y-3 border-t border-border pt-6">
+        <div className="mt-6 space-y-3 border-t border-line pt-6">
           {results.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border py-10 text-center">
+            <div className="rounded-[10px] border border-dashed border-line py-10 text-center">
               <p className="text-base font-semibold text-foreground">
                 No match found
               </p>
@@ -149,7 +133,7 @@ export default function PositionLookup({
               <p className="text-xs font-medium tracking-wide text-muted-foreground">
                 {results.length === 1 ? "1 result found" : `${results.length} results found`}
               </p>
-              <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs leading-5 text-muted-foreground">
+              <p className="rounded-[6px] border border-line bg-surface-2 px-3 py-2 text-xs leading-5 text-muted-foreground">
                 Note: your queue number may go up if people before you in the
                 queue decide not to purchase.
               </p>
@@ -178,13 +162,13 @@ function PositionResultCard({
   const timeValue = entry.source === "historical" ? entry.messagedAt : entry.createdAt;
 
   return (
-    <div className="animate-pop-in rounded-2xl border border-accent/30 bg-background p-5 sm:p-6">
+    <div className="animate-pop-in rounded-[10px] border border-charge/40 bg-background p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-muted-foreground">
             {isActive ? "Your queue position" : "Queue status"}
           </p>
-          <p className="mt-2 text-5xl font-bold tabular-nums tracking-[-0.03em] text-accent">
+          <p className="mt-2 font-display text-5xl font-bold tabular-nums tracking-[-0.04em] text-charge">
             {shownPosition ? (
               `#${shownPosition}`
             ) : (
@@ -203,7 +187,7 @@ function PositionResultCard({
           : `This number was originally #${entry.position} in the queue, but is no longer in the active waitlist (${STATUS_LABELS[entry.status].toLowerCase()}).`}
       </p>
 
-      <div className="mt-4 rounded-xl border border-border bg-card p-4 text-sm">
+      <div className="mt-4 rounded-[8px] border border-line bg-surface p-4 text-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="font-semibold text-foreground">
             u/{entry.redditUsername}
@@ -227,17 +211,17 @@ function PositionResultCard({
       </div>
 
       {entry.note ? (
-        <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-500/10 px-4 py-3">
-          <p className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-amber-300">
+        <div className="mt-4 rounded-[8px] border border-line bg-surface px-4 py-3">
+          <p className="flex items-center gap-1.5 label-mono">
             <NoteIcon />
             Your note
           </p>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-amber-100/90">
+          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground/90">
             {entry.note}
           </p>
         </div>
       ) : (
-        <p className="mt-4 rounded-xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground">
+        <p className="mt-4 rounded-[8px] border border-line bg-surface px-4 py-3 text-xs text-muted-foreground">
           No note was added to this entry.
         </p>
       )}

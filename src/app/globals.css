@@ -1,12 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b0b10;
-  --foreground: #f8fafc;
+  /* Charge palette (public pages). */
+  --background: #0a0c0b;
+  --surface: #121614;
+  --surface-2: #1a1f1c;
+  --line: #26302b;
+  --foreground: #f2f5ef;
+  --muted-foreground: #8a968f;
+  --charge: #c6f432;
+  --charge-hover: #d6fa6a;
+  --charge-dim: #3d4a1a;
+  --signal: #5ce1e6;
+  --warn: #ff8a4c;
+
+  /* Legacy tokens: the admin pages are built on these, keep them as they were. */
   --card: #1e1e23;
   --card-foreground: #f8fafc;
   --muted: #232328;
-  --muted-foreground: #94a3b8;
   --border: #1e293b;
   --accent: #3b82f6;
   --accent-foreground: #000000;
@@ -16,23 +27,33 @@
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
   --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-charge: var(--charge);
+  --color-charge-hover: var(--charge-hover);
+  --color-charge-dim: var(--charge-dim);
+  --color-signal: var(--signal);
+  --color-warn: var(--warn);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-unbounded), var(--font-inter-tight), ui-sans-serif, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :root {
   color-scheme: dark;
-  accent-color: var(--accent);
+  accent-color: var(--charge);
 }
 
 body {
@@ -60,7 +81,7 @@ li {
 input,
 textarea,
 select {
-  caret-color: var(--accent);
+  caret-color: var(--charge);
 }
 
 input::placeholder,
@@ -74,11 +95,11 @@ html {
 }
 
 ::selection {
-  background: rgba(59, 130, 246, 0.35);
+  background: rgba(198, 244, 50, 0.3);
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--signal);
   outline-offset: 2px;
 }
 
@@ -114,12 +135,295 @@ html {
   background-color: rgba(148, 163, 184, 0.55);
 }
 
-/* Static replacement for the old blurred, pulsing glow divs. */
-.ambient-glow {
+/* ---------------------------------------------------------------------------
+   Grain: a fixed, static noise layer. No blur, nothing to repaint on scroll.
+   --------------------------------------------------------------------------- */
+
+.grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  /* Above content (it is only 3.5% noise), below the intro overlay. */
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------------------------------------------------------------------------
+   Buttons
+   --------------------------------------------------------------------------- */
+
+/* Components sit in a layer so Tailwind utilities can still override them. */
+@layer components {
+  .btn-charge {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 8px;
+    background: var(--charge);
+    color: var(--background);
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color 120ms ease-out,
+      box-shadow 120ms ease-out,
+      transform 120ms ease-out;
+  }
+
+  .btn-charge:hover {
+    background: var(--charge-hover);
+    box-shadow: 0 0 28px rgba(198, 244, 50, 0.35);
+  }
+
+  .btn-charge:active {
+    transform: scale(0.98);
+  }
+
+  .btn-charge:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+    box-shadow: none;
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    color: var(--foreground);
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+      border-color 120ms ease-out,
+      color 120ms ease-out,
+      transform 120ms ease-out;
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--signal);
+    color: var(--signal);
+  }
+
+  .btn-ghost:active {
+    transform: scale(0.98);
+  }
+
+  .field {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--background);
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: var(--foreground);
+    transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+  }
+
+  .field:focus {
+    outline: none;
+    border-color: var(--signal);
+    box-shadow: 0 0 0 3px rgba(92, 225, 230, 0.2);
+  }
+
+  .field[aria-invalid="true"] {
+    border-color: var(--warn);
+  }
+
+  /* Small caps mono label used across sections. */
+  .label-mono {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Intro loader
+   The overlay is server-rendered and its whole timeline runs in CSS, so it
+   plays even before React hydrates. The client controller only reads the
+   animation clock for the % readout, locks scroll and fires helios:loaded.
+   Timeline: fill 0–1.3s, flash 1.3–1.42s, hold to 1.67s, exit to 2.17s.
+   --------------------------------------------------------------------------- */
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  animation: intro-exit 500ms var(--ease-out-expo) 1670ms both;
+}
+
+html[data-intro="skip"] .intro {
+  display: none;
+}
+
+.intro-bar {
+  animation: intro-flash 120ms linear 1300ms both;
+}
+
+.intro-seg {
+  background: var(--charge-dim);
+  transform: scaleY(0.6);
+  animation: seg-fill 160ms ease-out both;
+}
+
+/* Each segment lands as the quadratic ease-out % readout passes its midpoint. */
+.intro-seg:nth-child(1) { animation-delay: 33ms; }
+.intro-seg:nth-child(2) { animation-delay: 101ms; }
+.intro-seg:nth-child(3) { animation-delay: 174ms; }
+.intro-seg:nth-child(4) { animation-delay: 252ms; }
+.intro-seg:nth-child(5) { animation-delay: 335ms; }
+.intro-seg:nth-child(6) { animation-delay: 428ms; }
+.intro-seg:nth-child(7) { animation-delay: 531ms; }
+.intro-seg:nth-child(8) { animation-delay: 650ms; }
+.intro-seg:nth-child(9) { animation-delay: 797ms; }
+.intro-seg:nth-child(10) { animation-delay: 1009ms; }
+
+@keyframes seg-fill {
+  from {
+    background: var(--charge-dim);
+    transform: scaleY(0.6);
+  }
+  to {
+    background: var(--charge);
+    transform: scaleY(1);
+  }
+}
+
+@keyframes intro-flash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes intro-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8%);
+    visibility: hidden;
+  }
+}
+
+/* Hero entrance waits for the loader; on skip or without JS it is just there.
+   The H1 and sub never get .hero-in: they are the LCP candidates, and an
+   opacity-0 element can't count as painted until it fades in. */
+html:not([data-intro="skip"]):not([data-loaded]) .hero-in {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.hero-in {
+  transition:
+    opacity 600ms var(--ease-out-expo),
+    transform 600ms var(--ease-out-expo);
+}
+
+.hero-in:nth-child(2) { transition-delay: 80ms; }
+.hero-in:nth-child(3) { transition-delay: 160ms; }
+.hero-in:nth-child(4) { transition-delay: 240ms; }
+.hero-in:nth-child(5) { transition-delay: 320ms; }
+
+/* Charge ring: empty until the loader clears, then fills. */
+.charge-ring {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1400ms var(--ease-out-expo) 150ms;
+}
+
+html:not([data-intro="skip"]):not([data-loaded]) .charge-ring {
+  stroke-dashoffset: 100;
+}
+
+/* Reveal on scroll: only hidden once JS has opted the page in. */
+html[data-reveal] .reveal:not(.is-visible) {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.reveal {
+  transition:
+    opacity 700ms var(--ease-out-expo),
+    transform 700ms var(--ease-out-expo);
+}
+
+/* ---------------------------------------------------------------------------
+   Segmented bar motif
+   --------------------------------------------------------------------------- */
+
+.seg-loop > span {
+  animation: seg-loop 900ms ease-in-out infinite;
+}
+
+.seg-loop > span:nth-child(2) { animation-delay: 120ms; }
+.seg-loop > span:nth-child(3) { animation-delay: 240ms; }
+.seg-loop > span:nth-child(4) { animation-delay: 360ms; }
+.seg-loop > span:nth-child(5) { animation-delay: 480ms; }
+
+@keyframes seg-loop {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+/* Queue ticket: perforated edge from punched-out half circles. */
+.ticket-perf {
+  height: 16px;
   background:
-    radial-gradient(420px circle at 50% 0%, rgba(59, 130, 246, 0.18), transparent 70%),
-    radial-gradient(300px circle at 100% 100%, rgba(16, 185, 129, 0.1), transparent 70%),
-    radial-gradient(260px circle at 0% 33%, rgba(14, 165, 233, 0.08), transparent 70%);
+    radial-gradient(circle at 0 50%, var(--background) 8px, transparent 8.5px) left / 16px 16px no-repeat,
+    radial-gradient(circle at 100% 50%, var(--background) 8px, transparent 8.5px) right / 16px 16px no-repeat,
+    linear-gradient(90deg, var(--line) 50%, transparent 0) center / 10px 1px repeat-x;
+}
+
+/* ---------------------------------------------------------------------------
+   Confetti
+   --------------------------------------------------------------------------- */
+
+.confetti-piece {
+  position: fixed;
+  z-index: 90;
+  width: 7px;
+  height: 7px;
+  border-radius: 1px;
+  pointer-events: none;
+  animation: confetti-burst 1400ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes confetti-burst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -129,7 +433,7 @@ html {
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -157,16 +461,6 @@ html {
   }
 }
 
-@keyframes bounce-soft {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(6px);
-  }
-}
-
 @keyframes loading-slide {
   0% {
     transform: translateX(-120%);
@@ -177,19 +471,15 @@ html {
 }
 
 .animate-fade-up {
-  animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: fade-up 0.7s var(--ease-out-expo) both;
 }
 
 .animate-fade-in {
-  animation: fade-in 0.9s ease-out both;
+  animation: fade-in 0.4s ease-out both;
 }
 
 .animate-pop-in {
-  animation: pop-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.animate-bounce-soft {
-  animation: bounce-soft 1.8s ease-in-out infinite;
+  animation: pop-in 0.45s var(--ease-out-expo) both;
 }
 
 .loading-bar-indeterminate {
@@ -212,25 +502,19 @@ html {
   animation-delay: 320ms;
 }
 
-.delay-5 {
-  animation-delay: 400ms;
-}
-
-.delay-6 {
-  animation-delay: 480ms;
-}
-
-.delay-7 {
-  animation-delay: 560ms;
-}
-
 @media (prefers-reduced-motion: reduce) {
+  .intro,
+  .confetti-piece {
+    display: none !important;
+  }
+
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
     scroll-behavior: auto !important;
   }
 }

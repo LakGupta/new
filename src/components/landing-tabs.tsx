@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import JoinForm from "@/components/join-form";
 import PositionLookup from "@/components/position-lookup";
+import { SHOW_POSITION_EVENT } from "@/components/landing/events";
 
 type TabId = "join" | "position";
 
@@ -35,13 +36,20 @@ export default function LandingTabs({
   const [lookupSeed, setLookupSeed] = useState("");
   const active = TABS.find((tab) => tab.id === activeTab) ?? TABS[0];
 
+  // "Check my position" CTAs elsewhere on the page open the lookup tab.
+  useEffect(() => {
+    const showPosition = () => setActiveTab("position");
+    window.addEventListener(SHOW_POSITION_EVENT, showPosition);
+    return () => window.removeEventListener(SHOW_POSITION_EVENT, showPosition);
+  }, []);
+
   return (
     <div>
-      {/* Tab bar */}
+      {/* Tab bar: a two-way segmented control */}
       <div
         role="tablist"
         aria-label="Queue options"
-        className="mb-5 grid gap-2 sm:grid-cols-2"
+        className="mb-4 grid grid-cols-2 gap-1 rounded-[10px] border border-line bg-background p-1"
       >
         {TABS.map((tab) => {
           const selected = tab.id === activeTab;
@@ -53,21 +61,19 @@ export default function LandingTabs({
               aria-selected={selected}
               aria-controls={`waitlist-panel-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
-              className={`cursor-pointer rounded-xl border px-4 py-3 text-left transition ${
+              className={`min-h-11 cursor-pointer rounded-[7px] px-3 text-sm font-semibold transition-colors duration-[120ms] ${
                 selected
-                  ? "border-accent/60 bg-accent/15 text-accent shadow-[0_0_24px_rgba(59,130,246,0.15)]"
-                  : "border-border bg-card text-muted-foreground hover:border-accent/40 hover:text-foreground"
+                  ? "bg-charge text-background"
+                  : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
               }`}
             >
-              <span className="block text-sm font-semibold">
-                {tab.label}
-              </span>
+              {tab.label}
             </button>
           );
         })}
       </div>
 
-      <p className="mb-4 px-1 text-center text-xs leading-5 text-muted-foreground sm:text-sm">
+      <p className="mb-4 px-1 text-sm leading-6 text-muted-foreground">
         {active.caption}
       </p>
 
