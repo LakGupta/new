@@ -165,7 +165,7 @@ export default function StockPanel({
   return (
     <section
       aria-labelledby="stock-panel-heading"
-      className="rounded-2xl border border-border bg-card p-4"
+      className="rounded-[10px] border border-border bg-card p-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <h2
@@ -188,18 +188,18 @@ export default function StockPanel({
 
       {loadState === "loading" ? (
         <div className="mt-3 space-y-2" aria-hidden="true">
-          <div className="mx-auto h-10 w-28 animate-pulse rounded-lg bg-muted" />
+          <div className="mx-auto h-10 w-28 animate-pulse rounded-[6px] bg-muted" />
           <div className="mx-auto h-3 w-32 animate-pulse rounded-full bg-muted" />
         </div>
       ) : loadState === "error" ? (
-        <div className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 px-3.5 py-3">
+        <div className="mt-3 rounded-[8px] border border-destructive/40 bg-destructive/10 px-3.5 py-3">
           <p role="alert" className="text-sm text-destructive">
             {loadError}
           </p>
           <button
             type="button"
             onClick={handleRetryLoad}
-            className="mt-2.5 cursor-pointer rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/10"
+            className="mt-2.5 cursor-pointer rounded-[6px] border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/10"
           >
             Try again
           </button>
@@ -228,7 +228,7 @@ export default function StockPanel({
               onBlur={handleBlur}
               onFocus={(event) => event.target.select()}
               placeholder="—"
-              className="w-24 rounded-xl border border-border bg-background py-2 text-center font-mono text-3xl font-bold tabular-nums text-foreground placeholder:text-muted-foreground/70 focus:border-accent"
+              className="w-24 rounded-[8px] border border-border bg-background py-2 text-center font-mono text-3xl font-bold tabular-nums text-foreground placeholder:text-muted-foreground/70 focus:border-signal"
             />
 
             <StepButton
@@ -245,14 +245,14 @@ export default function StockPanel({
           </p>
 
           {saveState === "error" ? (
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-3.5 py-2.5">
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-[8px] border border-destructive/40 bg-destructive/10 px-3.5 py-2.5">
               <p role="alert" className="text-xs text-destructive">
                 {saveError}
               </p>
               <button
                 type="button"
                 onClick={() => void persist(parsed)}
-                className="cursor-pointer rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/10"
+                className="cursor-pointer rounded-[6px] border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/10"
               >
                 Try again
               </button>
@@ -282,7 +282,7 @@ function StepButton({
       disabled={disabled}
       aria-label={label}
       title={label}
-      className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition hover:border-accent/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:text-muted-foreground"
+      className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-border bg-background text-muted-foreground transition hover:border-accent/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:text-muted-foreground"
     >
       {children}
     </button>

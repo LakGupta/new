@@ -36,7 +36,7 @@ function formatDate(value: string): string {
 function StatusPill({ status }: { status: EntryStatus }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${STATUS_COLORS[status]}`}
+      className={`inline-flex items-center rounded-[4px] px-2 py-0.5 text-xs font-medium ring-1 ${STATUS_COLORS[status]}`}
     >
       {STATUS_LABELS[status]}
     </span>
@@ -279,7 +279,7 @@ export default function AdminApp() {
             <p className="font-mono text-xs uppercase tracking-[0.35em] text-accent">
               Admin
             </p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight">
+            <h1 className="mt-3 font-display text-3xl font-bold tracking-[-0.03em]">
               Helios Queue
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -289,7 +289,7 @@ export default function AdminApp() {
 
           <form
             onSubmit={handleLogin}
-            className="rounded-2xl border border-border bg-card p-5"
+            className="rounded-[10px] border border-border bg-card p-5"
           >
             <label
               htmlFor="admin-password"
@@ -304,14 +304,14 @@ export default function AdminApp() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
+              className="w-full rounded-[8px] border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-signal"
               placeholder="••••••••"
             />
 
             {loginError ? (
               <div
                 role="alert"
-                className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                className="mt-3 rounded-[8px] border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
               >
                 {loginError}
               </div>
@@ -319,7 +319,7 @@ export default function AdminApp() {
 
             <button
               type="submit"
-              className="mt-4 w-full cursor-pointer rounded-xl bg-accent py-3 text-base font-semibold text-accent-foreground transition hover:bg-blue-400 active:scale-[0.99]"
+              className="mt-4 w-full cursor-pointer rounded-[8px] bg-accent py-3 text-base font-semibold text-accent-foreground transition hover:bg-charge-hover active:scale-[0.99]"
             >
               Unlock admin
             </button>
@@ -337,7 +337,7 @@ export default function AdminApp() {
           <p className="font-mono text-xs uppercase tracking-[0.35em] text-accent">
             Admin
           </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">
+          <h1 className="mt-2 font-display text-3xl font-bold tracking-[-0.03em]">
             Helios Queue
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -346,7 +346,7 @@ export default function AdminApp() {
         </div>
         <button
           onClick={handleLogout}
-          className="cursor-pointer rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          className="shrink-0 cursor-pointer whitespace-nowrap rounded-[6px] border border-border px-3 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground"
         >
           Log out
         </button>
@@ -354,7 +354,7 @@ export default function AdminApp() {
 
       <a
         href="/admin/historical"
-        className="mb-6 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm text-muted-foreground transition hover:text-accent"
+        className="mb-6 inline-flex items-center gap-1.5 rounded-[6px] border border-border bg-card px-3 py-2 text-sm text-muted-foreground transition hover:text-accent"
       >
         Manage historical queue →
       </a>
@@ -362,7 +362,7 @@ export default function AdminApp() {
       {error ? (
         <div
           role="alert"
-          className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          className="mb-4 rounded-[8px] border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
         >
           {error}
         </div>
@@ -398,7 +398,7 @@ export default function AdminApp() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search username, WhatsApp, note…"
-            className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-4 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
+            className="w-full rounded-[8px] border border-border bg-card py-2.5 pl-10 pr-4 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-signal"
           />
         </div>
         <button
@@ -406,7 +406,7 @@ export default function AdminApp() {
             setShowAdd((v) => !v);
             setAddError(null);
           }}
-          className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition hover:bg-blue-400 active:scale-[0.98]"
+          className="flex cursor-pointer items-center justify-center gap-2 rounded-[8px] bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition hover:bg-charge-hover active:scale-[0.98]"
         >
           <svg
             className="h-4 w-4"
@@ -438,7 +438,7 @@ export default function AdminApp() {
             <button
               key={value}
               onClick={() => setFilter(value)}
-              className={`shrink-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+              className={`shrink-0 cursor-pointer rounded-[6px] border px-3.5 py-1.5 text-xs font-medium transition ${
                 active
                   ? "border-accent bg-accent/15 text-accent"
                   : "border-border bg-card text-muted-foreground hover:text-foreground"
@@ -454,7 +454,7 @@ export default function AdminApp() {
       {showAdd ? (
         <form
           onSubmit={handleCreateEntry}
-          className="mb-5 rounded-2xl border border-border bg-card p-5"
+          className="mb-5 rounded-[10px] border border-border bg-card p-5"
         >
           <h2 className="mb-4 text-lg font-semibold">Add someone manually</h2>
           <div className="space-y-4">
@@ -473,7 +473,7 @@ export default function AdminApp() {
                 onChange={(e) =>
                   setAddForm({ ...addForm, redditUsername: e.target.value })
                 }
-                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
+                className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-signal"
               />
             </div>
             <div>
@@ -492,7 +492,7 @@ export default function AdminApp() {
                   setAddForm({ ...addForm, whatsapp: e.target.value })
                 }
                 placeholder="98765 43210"
-                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
+                className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-signal"
               />
             </div>
             <div>
@@ -509,14 +509,14 @@ export default function AdminApp() {
                 onChange={(e) =>
                   setAddForm({ ...addForm, note: e.target.value })
                 }
-                className="w-full resize-none rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
+                className="w-full resize-none rounded-[8px] border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-signal"
               />
             </div>
 
             {addError ? (
               <div
                 role="alert"
-                className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                className="rounded-[8px] border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
               >
                 {addError}
               </div>
@@ -526,14 +526,14 @@ export default function AdminApp() {
               <button
                 type="submit"
                 disabled={addBusy}
-                className="flex-1 cursor-pointer rounded-xl bg-accent py-2.5 text-sm font-semibold text-accent-foreground transition hover:bg-blue-400 disabled:opacity-60"
+                className="flex-1 cursor-pointer rounded-[8px] bg-accent py-2.5 text-sm font-semibold text-accent-foreground transition hover:bg-charge-hover disabled:opacity-60"
               >
                 {addBusy ? "Adding…" : "Add to queue"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowAdd(false)}
-                className="cursor-pointer rounded-xl border border-border px-4 py-2.5 text-sm text-muted-foreground transition hover:text-foreground"
+                className="cursor-pointer rounded-[8px] border border-border px-4 py-2.5 text-sm text-muted-foreground transition hover:text-foreground"
               >
                 Cancel
               </button>
@@ -549,7 +549,7 @@ export default function AdminApp() {
             Loading…
           </p>
         ) : filteredEntries.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border py-14 text-center">
+          <div className="rounded-[10px] border border-dashed border-border py-14 text-center">
             <p className="text-sm text-muted-foreground">
               {entries.length === 0
                 ? "No one has joined the queue yet."
@@ -592,7 +592,7 @@ function StatCard({
 }) {
   return (
     <div
-      className={`rounded-xl border p-3 ${
+      className={`rounded-[8px] border p-3 ${
         highlight
           ? "border-accent/40 bg-accent/10"
           : "border-border bg-card"
@@ -660,13 +660,13 @@ function QueueCard({
 
   return (
     <article
-      className={`rounded-2xl border bg-card p-4 ${
+      className={`rounded-[10px] border bg-card p-4 ${
         isActive ? "border-border" : "border-border/60 opacity-80"
       }`}
     >
       <div className="flex items-start gap-3">
         <div
-          className={`flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl border ${
+          className={`flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-[8px] border ${
             isActive
               ? "border-accent/50 bg-accent/15 text-accent"
               : "border-border bg-muted text-muted-foreground"
@@ -689,7 +689,7 @@ function QueueCard({
             +{entry.whatsapp}
           </p>
           {entry.note ? (
-            <div className="mt-2 rounded-xl border border-amber-400/20 bg-amber-500/5 px-3 py-2.5">
+            <div className="mt-2 rounded-[8px] border border-amber-400/20 bg-amber-500/5 px-3 py-2.5">
               <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-amber-300/90">
                 Note
               </p>
@@ -724,7 +724,7 @@ function QueueCard({
               onChange={(e) =>
                 onEditFormChange({ ...editForm, redditUsername: e.target.value })
               }
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:border-accent"
+              className="w-full rounded-[6px] border border-border bg-background px-3 py-2 text-base text-foreground focus:border-signal"
             />
           </div>
           <div>
@@ -742,7 +742,7 @@ function QueueCard({
               onChange={(e) =>
                 onEditFormChange({ ...editForm, whatsapp: e.target.value })
               }
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:border-accent"
+              className="w-full rounded-[6px] border border-border bg-background px-3 py-2 text-base text-foreground focus:border-signal"
             />
           </div>
           {dateField ? (
@@ -759,7 +759,7 @@ function QueueCard({
                 required
                 value={dateField.value}
                 onChange={(e) => dateField.onChange(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:border-accent"
+                className="w-full rounded-[6px] border border-border bg-background px-3 py-2 text-base text-foreground focus:border-signal"
               />
               {dateField.hint ? (
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -783,14 +783,14 @@ function QueueCard({
               onChange={(e) =>
                 onEditFormChange({ ...editForm, note: e.target.value })
               }
-              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground focus:border-accent"
+              className="w-full resize-none rounded-[6px] border border-border bg-background px-3 py-2 text-base text-foreground focus:border-signal"
             />
           </div>
 
           {editError ? (
             <div
               role="alert"
-              className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              className="rounded-[6px] border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
             >
               {editError}
             </div>
@@ -800,14 +800,14 @@ function QueueCard({
             <button
               type="submit"
               disabled={busy}
-              className="cursor-pointer rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:bg-blue-400 disabled:opacity-60"
+              className="cursor-pointer rounded-[6px] bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:bg-charge-hover disabled:opacity-60"
             >
               Save
             </button>
             <button
               type="button"
               onClick={onCancelEdit}
-              className="cursor-pointer rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground transition hover:text-foreground"
+              className="cursor-pointer rounded-[6px] border border-border px-4 py-2 text-sm text-muted-foreground transition hover:text-foreground"
             >
               Cancel
             </button>
@@ -819,7 +819,7 @@ function QueueCard({
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-2 text-sm font-medium text-emerald-300 ring-1 ring-emerald-400/30 transition hover:bg-emerald-500/25"
+            className="flex cursor-pointer items-center gap-1.5 rounded-[6px] bg-emerald-500/15 px-3 py-2 text-sm font-medium text-emerald-300 ring-1 ring-emerald-400/30 transition hover:bg-emerald-500/25"
           >
             <MessageIcon />
             WhatsApp
@@ -830,7 +830,7 @@ function QueueCard({
             target="_blank"
             rel="noopener noreferrer"
             title={`Open u/${entry.redditUsername} on Reddit`}
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-orange-500/10 px-3 py-2 text-sm font-medium text-orange-300 ring-1 ring-orange-400/30 transition hover:bg-orange-500/20"
+            className="flex cursor-pointer items-center gap-1.5 rounded-[6px] bg-orange-500/10 px-3 py-2 text-sm font-medium text-orange-300 ring-1 ring-orange-400/30 transition hover:bg-orange-500/20"
           >
             <ExternalLinkIcon />
             Reddit
@@ -844,7 +844,7 @@ function QueueCard({
             value={entry.status}
             onChange={(e) => onStatusChange(e.target.value as EntryStatus)}
             disabled={busy}
-            className="cursor-pointer rounded-lg border border-border bg-background px-2.5 py-2 text-sm text-foreground focus:border-accent disabled:opacity-60"
+            className="cursor-pointer rounded-[6px] border border-border bg-background px-2.5 py-2 text-sm text-foreground focus:border-signal disabled:opacity-60"
           >
             {STATUSES.map((status) => (
               <option key={status} value={status}>
@@ -857,7 +857,7 @@ function QueueCard({
             <button
               onClick={onSkip}
               disabled={busy}
-              className="cursor-pointer rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition hover:border-amber-400/40 hover:text-amber-300 disabled:opacity-60"
+              className="cursor-pointer rounded-[6px] border border-border px-3 py-2 text-sm text-muted-foreground transition hover:border-amber-400/40 hover:text-amber-300 disabled:opacity-60"
             >
               Skip
             </button>
@@ -865,7 +865,7 @@ function QueueCard({
             <button
               onClick={onRestore}
               disabled={busy}
-              className="cursor-pointer rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground disabled:opacity-60"
+              className="cursor-pointer rounded-[6px] border border-border px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground disabled:opacity-60"
             >
               Restore
             </button>
@@ -874,7 +874,7 @@ function QueueCard({
           <button
             onClick={onStartEdit}
             disabled={busy}
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground disabled:opacity-60"
+            className="flex cursor-pointer items-center gap-1.5 rounded-[6px] border border-border px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground disabled:opacity-60"
           >
             <EditIcon />
             Edit
@@ -883,7 +883,7 @@ function QueueCard({
           <button
             onClick={onDelete}
             disabled={busy}
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition hover:border-destructive/40 hover:text-destructive disabled:opacity-60"
+            className="flex cursor-pointer items-center gap-1.5 rounded-[6px] border border-border px-3 py-2 text-sm text-muted-foreground transition hover:border-destructive/40 hover:text-destructive disabled:opacity-60"
           >
             <TrashIcon />
             Delete

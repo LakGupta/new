@@ -14,15 +14,16 @@
   --signal: #5ce1e6;
   --warn: #ff8a4c;
 
-  /* Legacy tokens: the admin pages are built on these, keep them as they were. */
-  --card: #1e1e23;
-  --card-foreground: #f8fafc;
-  --muted: #232328;
-  --border: #1e293b;
-  --accent: #3b82f6;
-  --accent-foreground: #000000;
-  --destructive: #ef4444;
-  --destructive-foreground: #000000;
+  /* Admin tokens: the admin pages are built on these names, mapped onto
+     the Charge palette so they match the public site. */
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --muted: var(--surface-2);
+  --border: var(--line);
+  --accent: var(--charge);
+  --accent-foreground: var(--background);
+  --destructive: var(--warn);
+  --destructive-foreground: var(--background);
 }
 
 @theme inline {

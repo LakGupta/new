@@ -211,7 +211,7 @@ export default function AdminNotesPanel({
   return (
     <section
       aria-labelledby="admin-notes-heading"
-      className="rounded-2xl border border-border bg-card p-4"
+      className="rounded-[10px] border border-border bg-card p-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <h2
@@ -237,17 +237,17 @@ export default function AdminNotesPanel({
         <div className="mt-3 space-y-2" aria-hidden="true">
           <div className="h-3 w-4/5 animate-pulse rounded-full bg-muted" />
           <div className="h-3 w-3/5 animate-pulse rounded-full bg-muted" />
-          <div className="h-32 animate-pulse rounded-xl bg-muted lg:h-52" />
+          <div className="h-32 animate-pulse rounded-[8px] bg-muted lg:h-52" />
         </div>
       ) : loadState === "error" ? (
-        <div className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 px-3.5 py-3">
+        <div className="mt-3 rounded-[8px] border border-destructive/40 bg-destructive/10 px-3.5 py-3">
           <p role="alert" className="text-sm text-destructive">
             {loadError}
           </p>
           <button
             type="button"
             onClick={handleRetryLoad}
-            className="mt-2.5 cursor-pointer rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/10"
+            className="mt-2.5 cursor-pointer rounded-[6px] border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/10"
           >
             Try again
           </button>
@@ -267,18 +267,18 @@ export default function AdminNotesPanel({
             placeholder={
               "e.g. 12 straps left · ₹12,600 each · message u/arjun next · 4 people waiting on COD"
             }
-            className="panel-scroll mt-3 min-h-36 w-full max-h-[40vh] resize-none overscroll-contain rounded-xl border border-border bg-background px-3.5 py-3 text-base leading-6 text-foreground placeholder:text-muted-foreground/80 focus:border-accent lg:min-h-88 lg:max-h-104"
+            className="panel-scroll mt-3 min-h-36 w-full max-h-[40vh] resize-none overscroll-contain rounded-[8px] border border-border bg-background px-3.5 py-3 text-base leading-6 text-foreground placeholder:text-muted-foreground/80 focus:border-signal lg:min-h-88 lg:max-h-104"
           />
 
           {saveState === "error" ? (
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-3.5 py-2.5">
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-[8px] border border-destructive/40 bg-destructive/10 px-3.5 py-2.5">
               <p role="alert" className="text-xs text-destructive">
                 {saveError} Your text is still here.
               </p>
               <button
                 type="button"
                 onClick={() => void persist(content)}
-                className="cursor-pointer rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/10"
+                className="cursor-pointer rounded-[6px] border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/10"
               >
                 Try again
               </button>
@@ -302,7 +302,7 @@ export default function AdminNotesPanel({
               <button
                 type="button"
                 onClick={handleClear}
-                className="cursor-pointer rounded-lg px-2 py-1 text-xs text-muted-foreground transition hover:text-destructive"
+                className="cursor-pointer rounded-[6px] px-2 py-1 text-xs text-muted-foreground transition hover:text-destructive"
               >
                 Clear notes
               </button>

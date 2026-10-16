@@ -23,7 +23,7 @@ function formatDate(value: string): string {
 function StatusPill({ status }: { status: CombinedEntryWithPositions["status"] }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${STATUS_COLORS[status]}`}
+      className={`inline-flex items-center rounded-[4px] px-2 py-0.5 text-xs font-medium ring-1 ${STATUS_COLORS[status]}`}
     >
       {STATUS_LABELS[status]}
     </span>

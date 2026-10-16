@@ -472,7 +472,7 @@ export default function CombinedAdminApp() {
             <p className="font-mono text-xs uppercase tracking-[0.35em] text-accent">
               Admin
             </p>
-            <h1 className="mt-3 text-3xl font-bold tracking-tight">
+            <h1 className="mt-3 font-display text-3xl font-bold tracking-[-0.03em]">
               Helios Queue
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -482,7 +482,7 @@ export default function CombinedAdminApp() {
 
           <form
             onSubmit={handleLogin}
-            className="rounded-2xl border border-border bg-card p-5"
+            className="rounded-[10px] border border-border bg-card p-5"
           >
             <label
               htmlFor="admin-password-combined"
@@ -497,14 +497,14 @@ export default function CombinedAdminApp() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
+              className="w-full rounded-[8px] border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-signal"
               placeholder="••••••••"
             />
 
             {loginError ? (
               <div
                 role="alert"
-                className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                className="mt-3 rounded-[8px] border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
               >
                 {loginError}
               </div>
@@ -512,7 +512,7 @@ export default function CombinedAdminApp() {
 
             <button
               type="submit"
-              className="mt-4 w-full cursor-pointer rounded-xl bg-accent py-3 text-base font-semibold text-accent-foreground transition hover:bg-blue-400 active:scale-[0.99]"
+              className="mt-4 w-full cursor-pointer rounded-[8px] bg-accent py-3 text-base font-semibold text-accent-foreground transition hover:bg-charge-hover active:scale-[0.99]"
             >
               Unlock admin
             </button>
@@ -530,7 +530,7 @@ export default function CombinedAdminApp() {
           <p className="font-mono text-xs uppercase tracking-[0.35em] text-accent">
             Admin
           </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">
+          <h1 className="mt-2 font-display text-3xl font-bold tracking-[-0.03em]">
             Helios Queue
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -540,7 +540,7 @@ export default function CombinedAdminApp() {
         </div>
         <button
           onClick={handleLogout}
-          className="cursor-pointer rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          className="shrink-0 cursor-pointer whitespace-nowrap rounded-[6px] border border-border px-3 py-2 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground"
         >
           Log out
         </button>
@@ -549,7 +549,7 @@ export default function CombinedAdminApp() {
       {error ? (
         <div
           role="alert"
-          className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          className="mb-4 rounded-[8px] border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
         >
           {error}
         </div>
@@ -587,7 +587,7 @@ export default function CombinedAdminApp() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search username, WhatsApp, note…"
-                className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-4 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-accent"
+                className="w-full rounded-[8px] border border-border bg-card py-2.5 pl-10 pr-4 text-base text-foreground placeholder:text-muted-foreground/60 focus:border-signal"
               />
             </div>
             <button
@@ -595,7 +595,7 @@ export default function CombinedAdminApp() {
                 setShowAdd((v) => !v);
                 setAddError(null);
               }}
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition hover:bg-blue-400 active:scale-[0.98]"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-[8px] bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition hover:bg-charge-hover active:scale-[0.98]"
             >
               <svg
                 className="h-4 w-4"
@@ -627,7 +627,7 @@ export default function CombinedAdminApp() {
                 <button
                   key={value}
                   onClick={() => setFilter(value)}
-                  className={`shrink-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+                  className={`shrink-0 cursor-pointer rounded-[6px] border px-3.5 py-1.5 text-xs font-medium transition ${
                 active
                   ? "border-accent bg-accent/15 text-accent"
                   : "border-border bg-card text-muted-foreground hover:text-foreground"
@@ -643,7 +643,7 @@ export default function CombinedAdminApp() {
           {showAdd ? (
             <form
               onSubmit={handleCreateEntry}
-              className="mb-5 rounded-2xl border border-border bg-card p-5"
+              className="mb-5 rounded-[10px] border border-border bg-card p-5"
             >
               <h2 className="mb-4 text-lg font-semibold">Add someone manually</h2>
 
@@ -667,7 +667,7 @@ export default function CombinedAdminApp() {
                           setAddSource(option.value);
                           setAddForm(EMPTY_FORM);
                         }}
-                        className={`cursor-pointer rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
+                        className={`cursor-pointer rounded-[8px] border px-4 py-2.5 text-sm font-medium transition ${
                       selected
                         ? "border-accent bg-accent/15 text-accent"
                         : "border-border bg-background text-muted-foreground hover:text-foreground"
@@ -696,7 +696,7 @@ export default function CombinedAdminApp() {
                     onChange={(e) =>
                       setAddForm({ ...addForm, redditUsername: e.target.value })
                     }
-                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
+                    className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-signal"
                   />
                 </div>
                 <div>
@@ -715,7 +715,7 @@ export default function CombinedAdminApp() {
                       setAddForm({ ...addForm, whatsapp: e.target.value })
                     }
                     placeholder="98765 43210"
-                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
+                    className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-signal"
                   />
                 </div>
                 {addSource === "historical" ? (
@@ -734,7 +734,7 @@ export default function CombinedAdminApp() {
                       onChange={(e) =>
                         setAddForm({ ...addForm, messagedAt: e.target.value })
                       }
-                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
+                      className="w-full rounded-[8px] border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-signal"
                     />
                   </div>
                 ) : null}
@@ -752,14 +752,14 @@ export default function CombinedAdminApp() {
                     onChange={(e) =>
                       setAddForm({ ...addForm, note: e.target.value })
                     }
-                    className="w-full resize-none rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-accent"
+                    className="w-full resize-none rounded-[8px] border border-border bg-background px-4 py-2.5 text-base text-foreground focus:border-signal"
                   />
                 </div>
 
                 {addError ? (
                   <div
                     role="alert"
-                    className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                    className="rounded-[8px] border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
                   >
                     {addError}
                   </div>
@@ -769,14 +769,14 @@ export default function CombinedAdminApp() {
                   <button
                     type="submit"
                     disabled={addBusy}
-                    className="flex-1 cursor-pointer rounded-xl bg-accent py-2.5 text-sm font-semibold text-accent-foreground transition hover:bg-blue-400 disabled:opacity-60"
+                    className="flex-1 cursor-pointer rounded-[8px] bg-accent py-2.5 text-sm font-semibold text-accent-foreground transition hover:bg-charge-hover disabled:opacity-60"
                   >
                     {addBusy ? "Adding…" : "Add to queue"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowAdd(false)}
-                    className="cursor-pointer rounded-xl border border-border px-4 py-2.5 text-sm text-muted-foreground transition hover:text-foreground"
+                    className="cursor-pointer rounded-[8px] border border-border px-4 py-2.5 text-sm text-muted-foreground transition hover:text-foreground"
                   >
                     Cancel
                   </button>
@@ -792,7 +792,7 @@ export default function CombinedAdminApp() {
                 Loading…
               </p>
             ) : filteredEntries.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border py-14 text-center">
+              <div className="rounded-[10px] border border-dashed border-border py-14 text-center">
                 <p className="text-sm text-muted-foreground">
                   {entries.length === 0
                     ? "No one has joined the queue yet."
