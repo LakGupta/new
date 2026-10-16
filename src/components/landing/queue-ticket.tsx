@@ -5,8 +5,9 @@ import { PRODUCT_PRICE } from "@/lib/product";
 const ROWS = [
   { label: "Price", value: PRODUCT_PRICE },
   { label: "Shipping", value: "Free, PAN India" },
+  { label: "Face-to-face", value: "Bangalore" },
   { label: "Contact", value: "via WhatsApp" },
-  { label: "Payment", value: "Prepaid" },
+  { label: "Payment", value: "Prepaid, no COD" },
 ];
 
 /** Status card beside the form, styled as a tear-off queue ticket. */
@@ -35,6 +36,10 @@ export default function QueueTicket() {
           </div>
         ))}
       </dl>
+      <p className="px-5 pb-5 text-xs leading-5 text-muted-foreground sm:px-6">
+        No COD: once a box is opened, a return leaves us with a big loss, so
+        every order is prepaid.
+      </p>
 
       <div className="border-t border-line px-5 py-5 sm:px-6">
         <div className="flex items-center justify-between gap-4">

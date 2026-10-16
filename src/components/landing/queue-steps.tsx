@@ -1,4 +1,3 @@
-import ProductDetails from "@/components/product-details";
 import QueueExplainer from "@/components/queue-explainer";
 import Reveal from "@/components/landing/reveal";
 import SectionHeading from "@/components/landing/section-heading";
@@ -51,9 +50,8 @@ export default function QueueSteps() {
           ))}
         </ol>
 
-        <div className="mt-6 grid gap-6 lg:mt-14 lg:grid-cols-2">
+        <div className="mt-6 max-w-2xl lg:mt-14">
           <QueueExplainer />
-          <ProductDetails />
         </div>
       </div>
     </Reveal>
