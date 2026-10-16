@@ -43,7 +43,7 @@ export default function QueueSteps() {
                   </>
                 ) : null}
               </div>
-              <p className="pt-2 text-base leading-7 text-foreground/85 lg:mt-5 lg:pt-0 lg:pr-4">
+              <p className="pt-2 text-base font-light leading-7 text-foreground/90 lg:mt-5 lg:pt-0 lg:pr-4">
                 {step}
               </p>
             </li>

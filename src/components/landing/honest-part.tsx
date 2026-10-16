@@ -30,7 +30,7 @@ export default function HonestPart() {
           {FACTS.map((fact) => (
             <li key={fact.title} className="py-5">
               <p className="font-semibold text-foreground">{fact.title}</p>
-              <p className="mt-1 leading-7 text-muted-foreground">{fact.body}</p>
+              <p className="mt-1 font-light leading-7 text-muted-foreground">{fact.body}</p>
             </li>
           ))}
           {LANDING.honestPart.map((line) => (

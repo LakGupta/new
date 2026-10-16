@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter_Tight, JetBrains_Mono, Unbounded } from "next/font/google";
+import { JetBrains_Mono, Sora, Unbounded } from "next/font/google";
 import "./globals.css";
 
 // Display face (variable: 700 for headings, 300–400 for lead copy). Swaps in
@@ -11,10 +11,11 @@ const unbounded = Unbounded({
   preload: false,
 });
 
-const interTight = Inter_Tight({
-  variable: "--font-inter-tight",
+// Body face: geometric and slightly wide, a calmer partner to Unbounded.
+// Variable, so one file covers light prose through semibold labels.
+const sora = Sora({
+  variable: "--font-sora",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
 });
 
 // Mono is only for small labels and numbers: let it swap in without a preload
@@ -60,7 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       suppressHydrationWarning
       lang="en"
-      className={`${unbounded.variable} ${interTight.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${unbounded.variable} ${sora.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
