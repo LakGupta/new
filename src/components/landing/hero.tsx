@@ -34,10 +34,10 @@ export default function Hero() {
           <br />
           <span className="text-charge">Charging up here.</span>
         </h1>
-        <p className="mt-6 max-w-lg text-lg leading-8 text-muted-foreground">
+        <p className="lead mt-6 max-w-lg text-[1.0625rem] sm:text-lg">
           Amazfit India and Amazon can&apos;t sell you one right now. Get in the
-          queue with your Reddit username and WhatsApp, and we&apos;ll message
-          you in the order you joined.
+          queue with your <em>Reddit username</em> and <em>WhatsApp</em>, and
+          we&apos;ll message you in the order you joined.
         </p>
 
         <div className="hero-in mt-8 flex flex-col gap-3 sm:flex-row">

@@ -1,7 +1,5 @@
-import Link from "next/link";
 import IntroLoader from "@/components/intro-loader";
 import LandingTabs from "@/components/landing-tabs";
-import Faq from "@/components/landing/faq";
 import FounderNote from "@/components/landing/founder-note";
 import Gallery from "@/components/landing/gallery";
 import Hero from "@/components/landing/hero";
@@ -10,11 +8,9 @@ import { WhatsAppIcon } from "@/components/landing/icons";
 import ProofSection from "@/components/landing/proof-section";
 import QueueSteps from "@/components/landing/queue-steps";
 import QueueTicket from "@/components/landing/queue-ticket";
-import Reveal from "@/components/landing/reveal";
 import SectionHeading from "@/components/landing/section-heading";
 import SiteFooter from "@/components/landing/site-footer";
 import SiteNav from "@/components/landing/site-nav";
-import SpecSheet from "@/components/landing/spec-sheet";
 import VouchLink from "@/components/landing/vouch-link";
 
 export default function Home() {
@@ -31,25 +27,13 @@ export default function Home() {
           <Hero />
           <ProofSection />
           <FounderNote />
-          <SpecSheet />
           <QueueSteps />
-          <HonestPart />
-
-          <Reveal
-            aria-labelledby="faq-title"
-            className="mx-auto max-w-[1100px] px-4 py-16 sm:py-24 lg:py-28"
-          >
-            <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-16">
-              <SectionHeading id="faq-title" eyebrow="Before you ask" title="Questions, answered." />
-              <Faq />
-            </div>
-          </Reveal>
 
           {/* Join / check-position tabs */}
           <section
             id="join-form"
             aria-labelledby="join-title"
-            className="scroll-mt-16 border-y border-line bg-surface"
+            className="scroll-mt-16 border-b border-line bg-surface"
           >
             <div className="mx-auto max-w-[1100px] px-4 py-16 sm:py-24 lg:py-28">
               <SectionHeading id="join-title" eyebrow="The queue" title="Get on the list.">
@@ -93,17 +77,13 @@ export default function Home() {
                       </a>
                     </div>
                   ) : null}
-
-                  <Link
-                    href="/historical"
-                    className="mt-4 flex min-h-11 items-center justify-center text-center text-sm text-muted-foreground transition-colors duration-[120ms] hover:text-charge"
-                  >
-                    Messaged us before this site? Join the historical queue →
-                  </Link>
                 </div>
               </div>
             </div>
           </section>
+
+          <HonestPart />
+
 
           <Gallery />
         </main>

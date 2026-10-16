@@ -235,7 +235,25 @@ html {
     border-color: var(--warn);
   }
 
-  /* Small caps mono label used across sections. */
+  /* Lead copy under headlines: the display face at a light weight, so intros
+   carry the same character as the titles instead of falling back to plain
+   body text. Emphasised words light up in the foreground colour. */
+.lead {
+  font-family: var(--font-display);
+  font-weight: 300;
+  line-height: 1.7;
+  letter-spacing: -0.01em;
+  color: var(--muted-foreground);
+}
+
+.lead em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--foreground);
+  box-shadow: inset 0 -0.35em 0 rgba(198, 244, 50, 0.18);
+}
+
+/* Small caps mono label used across sections. */
   .label-mono {
     font-family: var(--font-mono);
     font-size: 0.6875rem;

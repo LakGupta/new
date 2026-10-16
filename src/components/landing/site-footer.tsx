@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { WordMark } from "@/components/landing/site-nav";
 import VouchLink from "@/components/landing/vouch-link";
 import { LANDING } from "@/lib/landing-config";
@@ -10,8 +9,7 @@ export default function SiteFooter() {
         <div>
           <WordMark className="text-lg" />
           <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-            First come, first served. Historical and website entries share one
-            queue order.
+            First come, first served. Your place is the order you joined.
           </p>
           {LANDING.contactEmail ? (
             <p className="mt-2 text-sm text-muted-foreground">
@@ -23,12 +21,6 @@ export default function SiteFooter() {
           ) : null}
         </div>
         <div className="flex flex-col items-start gap-1 text-sm">
-          <Link
-            href="/historical"
-            className="inline-flex min-h-11 items-center text-foreground underline-offset-4 hover:text-charge hover:underline"
-          >
-            Messaged us before this site? Join the historical queue →
-          </Link>
           <VouchLink variant="text" className="text-sm" />
         </div>
       </div>

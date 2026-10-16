@@ -23,7 +23,7 @@ export default function SectionHeading({
         {title}
       </h2>
       {children ? (
-        <p className="mt-4 text-base leading-7 text-muted-foreground sm:text-lg">
+        <p className="lead mt-4 text-[0.9375rem] sm:text-base">
           {children}
         </p>
       ) : null}

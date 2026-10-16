@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import { Inter_Tight, JetBrains_Mono, Unbounded } from "next/font/google";
 import "./globals.css";
 
-// Display face: swaps in over a metric-matched fallback, no preload, so it
-// doesn't compete with the body font and HTML on slow connections.
+// Display face (variable: 700 for headings, 300–400 for lead copy). Swaps in
+// over a metric-matched fallback, no preload, so it doesn't compete with the
+// body font and HTML on slow connections.
 const unbounded = Unbounded({
   variable: "--font-unbounded",
   subsets: ["latin"],
-  weight: "700",
   preload: false,
 });
 

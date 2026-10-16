@@ -12,11 +12,6 @@ export interface ProofItem {
   image?: string;
 }
 
-export interface SpecItem {
-  value: string;
-  label: string;
-}
-
 export const LANDING = {
   // A count of 0 hides the tile.
   heroStat: { label: "Buyers served", value: 0 }, // TODO: confirm
@@ -42,25 +37,6 @@ export const LANDING = {
   vouchUrl: "https://www.reddit.com/r/AmazfitHelioStrap/s/toAT5Y1eQM",
 
   founder: { quote: "", handle: "" }, // TODO: owner writes
-
-  // Checked against us.amazfit.com/products/helio-strap on 2026-10-16.
-  // TODO: verify against amazfit.com (India listing) before launch.
-  specs: [
-    { value: "10 days", label: "battery, typical use" },
-    { value: "20 g", label: "weight" },
-    { value: "5 ATM", label: "water resistance" },
-    { value: "50+", label: "sports modes" },
-    { value: "6.0", label: "BioTracker PPG sensor" },
-    { value: "₹0", label: "subscription required" },
-  ] as SpecItem[],
-  specFeatures: [
-    "Continuous heart rate",
-    "HRV",
-    "Sleep",
-    "Temperature",
-    "Bluetooth 5.2",
-    "Zepp App",
-  ],
 
   // Extra lines for "The honest part", e.g. what to know about warranty.
   honestPart: [] as string[], // TODO: owner writes
