@@ -35,6 +35,8 @@ export default function IntroController() {
     const captionEl = document.getElementById("intro-caption");
     let finished = false;
     let frame = 0;
+    // Switches off the CSS no-JS failsafe for scroll reveals.
+    root.dataset.hydrated = "";
 
     function finish() {
       if (finished) return;

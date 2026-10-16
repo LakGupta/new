@@ -348,6 +348,9 @@ html[data-intro="skip"] .intro {
 html:not([data-intro="skip"]):not([data-loaded]) .hero-in {
   opacity: 0;
   transform: translateY(16px);
+  /* Failsafe: if JS never runs (blocked script, broken in-app browser), the
+     hidden state times out and the content shows anyway. */
+  animation: unhide 400ms ease-out 2600ms forwards;
 }
 
 .hero-in {
@@ -370,12 +373,32 @@ html:not([data-intro="skip"]):not([data-loaded]) .hero-in {
 
 html:not([data-intro="skip"]):not([data-loaded]) .charge-ring {
   stroke-dashoffset: 100;
+  animation: ring-fill-failsafe 1400ms var(--ease-out-expo) 2600ms forwards;
+}
+
+@keyframes ring-fill-failsafe {
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 /* Reveal on scroll: only hidden once JS has opted the page in. */
 html[data-reveal] .reveal:not(.is-visible) {
   opacity: 0;
   transform: translateY(16px);
+}
+
+/* Failsafe for when React never hydrates (data-hydrated is set on mount):
+   time the hidden state out so no section stays invisible. */
+html[data-reveal]:not([data-hydrated]) .reveal:not(.is-visible) {
+  animation: unhide 400ms ease-out 3500ms forwards;
+}
+
+@keyframes unhide {
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .reveal {
