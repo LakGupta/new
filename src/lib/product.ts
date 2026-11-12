@@ -1,1 +1,1 @@
-export const PRODUCT_PRICE = "₹12,600";
+export const PRODUCT_PRICE = "₹12,100";
